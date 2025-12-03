@@ -78,6 +78,8 @@ ProyectoMegaSantiagoWordpress/
 
 ## 📌 Repositorio Oficial
 🔗 https://github.com/AnthonyJoelRY/ProyectoMegaSantiagoWordpress
+## link de wiframe: 
+https://excalidraw.com/#json=_fcWCgIk4n3clVOwuzyCa,tix3LXE9W7AnRhXhoEdX8Q
 
 ## 📩 Autor
 Anthony Joel Romero Yaguana
