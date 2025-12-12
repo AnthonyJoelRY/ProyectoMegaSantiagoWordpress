@@ -33,10 +33,8 @@
             </div>
         </div>
 
-        <div class="header-right">
-            <a href="login.html" class="link-header">Acceder / Registrarse</a>
-            <a href="carrito.html" class="link-header">🛒 Carrito</a>
-        </div>
+        <!-- Se rellena con el usuario logueado (localStorage) -->
+        <div class="header-right" id="header-usuario"></div>
     </header>
 
     <!-- NAV -->
@@ -163,7 +161,7 @@
             <section class="category-main">
 
                 <div class="category-main-header">
-                    <p>Mostrando 1–4 de 4 resultados</p>
+                    <p id="textoResultadosOficina">Mostrando 0 resultados</p>
 
                     <div class="category-sort">
                         <label for="ordenOficina">Ordenar por:</label>
@@ -176,59 +174,7 @@
                 </div>
 
                 <div id="gridOficina" class="product-grid">
-
-                    <article class="product-card"
-                             data-id="OF001"
-                             data-nombre="Archivador de palanca"
-                             data-precio="3.20"
-                             data-tipo="archivadores">
-                        <div class="product-image">
-                            <img src="../Model/imagenes/Archivador_de_palanca.png" alt="Archivador de palanca">
-                        </div>
-                        <h3>Archivador de palanca</h3>
-                        <p class="product-price">$3.20 + IVA</p>
-                        <button class="btn-add-grid">Agregar al carrito</button>
-                    </article>
-
-                    <article class="product-card"
-                             data-id="OF002"
-                             data-nombre="Set de clips y grapas"
-                             data-precio="1.10"
-                             data-tipo="organizacion">
-                        <div class="product-image">
-                            <img src="../Model/imagenes/Set_de_clips_y_grapas.jpeg" alt="Set de clips y grapas">
-                        </div>
-                        <h3>Set de clips y grapas</h3>
-                        <p class="product-price">$1.10 + IVA</p>
-                        <button class="btn-add-grid">Agregar al carrito</button>
-                    </article>
-
-                    <article class="product-card"
-                             data-id="OF003"
-                             data-nombre="Bandeja organizadora"
-                             data-precio="4.80"
-                             data-tipo="organizacion">
-                        <div class="product-image">
-                            <img src="../Model/imagenes/Bandeja_organizadora.png" alt="Bandeja organizadora">
-                        </div>
-                        <h3>Bandeja organizadora</h3>
-                        <p class="product-price">$4.80 + IVA</p>
-                        <button class="btn-add-grid">Agregar al carrito</button>
-                    </article>
-
-                    <article class="product-card"
-                             data-id="OF004"
-                             data-nombre="Calculadora de escritorio"
-                             data-precio="6.50"
-                             data-tipo="escritura">
-                        <div class="product-image">
-                            <img src="../Model/imagenes/Calculadora_de_escritorio.png" alt="Calculadora de escritorio">
-                        </div>
-                        <h3>Calculadora de escritorio</h3>
-                        <p class="product-price">$6.50 + IVA</p>
-                        <button class="btn-add-grid">Agregar al carrito</button>
-                    </article>
-
+                    <!-- Productos cargados desde la BD -->
                 </div>
             </section>
         </div>
@@ -238,9 +184,93 @@
         <p>MegaSantiago © 2025 - Todos los derechos reservados</p>
     </footer>
 
-    <!-- ORDENAR -->
+    <!-- ============================= -->
+    <!--   JS SUMINISTROS DE OFICINA   -->
+    <!-- ============================= -->
     <script>
-        (function () {
+        const API_URL = "/MegaSantiagoFront/Controller/productosController.php";
+
+        function formatearDinero(valor) {
+            return "$" + Number(valor).toFixed(2);
+        }
+
+        // Detectamos el tipo para el filtro a partir del nombre del producto
+        function detectarTipoOficina(nombre) {
+            const n = (nombre || "").toLowerCase();
+            if (n.includes("archivador"))  return "archivadores";
+            if (n.includes("clip") || n.includes("grapa") || n.includes("bandeja")) return "organizacion";
+            if (n.includes("calculadora") || n.includes("lapicero") || n.includes("esfero")) return "escritura";
+            return "otros";
+        }
+
+        function crearTarjetaOficina(prod) {
+            const precioBase    = parseFloat(prod.precio);
+            const precioOferta  = prod.precio_oferta ? parseFloat(prod.precio_oferta) : null;
+            const precioMostrar = (precioOferta && precioOferta > 0) ? precioOferta : precioBase;
+
+            const rutaImagen = prod.imagen
+                ? "../Model/" + prod.imagen
+                : "../Model/imagenes/sin-imagen.png";
+
+            const tipo = detectarTipoOficina(prod.nombre);
+
+            return `
+                <article class="product-card"
+                         data-id="${prod.id}"
+                         data-precio="${precioMostrar}"
+                         data-tipo="${tipo}">
+                    <div class="product-image">
+                        <img src="${rutaImagen}" alt="${prod.nombre}">
+                    </div>
+                    <h3>${prod.nombre}</h3>
+                    <p class="product-price">${formatearDinero(precioMostrar)} + IVA</p>
+                    <button class="btn-add-grid" type="button">Agregar al carrito</button>
+                </article>
+            `;
+        }
+
+        async function cargarProductosOficina() {
+            const grid  = document.getElementById("gridOficina");
+            const texto = document.getElementById("textoResultadosOficina");
+
+            grid.innerHTML = "<p>Cargando productos...</p>";
+
+            try {
+                // IMPORTANTE: el slug de la categoría debe ser 'oficina'
+                const resp = await fetch(`${API_URL}?accion=listarPorCategoria&categoria=oficina`);
+                const data = await resp.json();
+
+                console.log("Oficina API:", data);
+
+                if (data.error) {
+                    grid.innerHTML = `<p>Error: ${data.error}</p>`;
+                    texto.textContent = "Mostrando 0 resultados";
+                    return;
+                }
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    grid.innerHTML = "<p>No hay productos disponibles en Suministros de oficina.</p>";
+                    texto.textContent = "Mostrando 0 resultados";
+                    return;
+                }
+
+                grid.innerHTML = data.map(crearTarjetaOficina).join("");
+                texto.textContent =
+                    `Mostrando ${data.length} resultado${data.length > 1 ? "s" : ""}`;
+
+                inicializarOrdenOficina();
+                inicializarFiltrosOficina();
+                inicializarCarritoOficina();
+
+            } catch (err) {
+                console.error(err);
+                grid.innerHTML = "<p>Error al cargar productos.</p>";
+                texto.textContent = "Mostrando 0 resultados";
+            }
+        }
+
+        /* -------- ORDEN -------- */
+        function inicializarOrdenOficina() {
             const selectOrden = document.getElementById("ordenOficina");
             const grid = document.getElementById("gridOficina");
 
@@ -253,26 +283,21 @@
                 cards.sort((a, b) => {
                     const pa = parseFloat(a.dataset.precio);
                     const pb = parseFloat(b.dataset.precio);
-
                     return opcion === "precio-asc" ? pa - pb : pb - pa;
                 });
 
                 cards.forEach(c => grid.appendChild(c));
             });
-        })();
-    </script>
+        }
 
-    <!-- FILTROS -->
-    <script>
-        (function () {
-
-            const grid = document.getElementById("gridOficina");
-            const cards = Array.from(grid.querySelectorAll(".product-card"));
-
-            const selectTipo = document.querySelector(".sidebar-select-tipo");
-            const range = document.querySelector(".sidebar-range");
-            const infoPrecio = document.querySelector(".sidebar-range-info");
-            const btnFiltrar = document.querySelector(".btn-sidebar");
+        /* -------- FILTROS -------- */
+        function inicializarFiltrosOficina() {
+            const grid        = document.getElementById("gridOficina");
+            const cards       = Array.from(grid.querySelectorAll(".product-card"));
+            const selectTipo  = document.querySelector(".sidebar-select-tipo");
+            const range       = document.querySelector(".sidebar-range");
+            const infoPrecio  = document.querySelector(".sidebar-range-info");
+            const btnFiltrar  = document.querySelector(".btn-sidebar");
 
             infoPrecio.textContent = "Precio máx: $" + range.value;
 
@@ -281,27 +306,24 @@
             });
 
             btnFiltrar.addEventListener("click", () => {
-
-                const t = selectTipo.value;
+                const t    = selectTipo.value;
                 const maxP = parseFloat(range.value);
 
                 cards.forEach(card => {
                     const precio = parseFloat(card.dataset.precio);
-                    const tipo = card.dataset.tipo;
+                    const tipo   = card.dataset.tipo;
 
-                    const okTipo = t === "todos" || tipo === t;
+                    const okTipo   = (t === "todos" || tipo === t);
                     const okPrecio = precio <= maxP;
 
                     card.style.display = (okTipo && okPrecio) ? "" : "none";
                 });
             });
+        }
 
-        })();
-    </script>
-
-    <!-- CARRITO -->
-    <script>
-        (function () {
+        /* -------- CARRITO -------- */
+        function inicializarCarritoOficina() {
+            const grid = document.getElementById("gridOficina");
 
             function getCarrito() {
                 return JSON.parse(localStorage.getItem("carritoMega") || "[]");
@@ -311,36 +333,33 @@
                 localStorage.setItem("carritoMega", JSON.stringify(c));
             }
 
-            function agregar(id, nombre, precio) {
-                let c = getCarrito();
-                const ex = c.find(p => p.id === id);
+            grid.addEventListener("click", (e) => {
+                if (!e.target.classList.contains("btn-add-grid")) return;
 
+                const card = e.target.closest(".product-card");
+
+                let c  = getCarrito();
+                const id     = card.dataset.id;
+                const nombre = card.querySelector("h3").textContent;
+                const precio = parseFloat(card.dataset.precio);
+
+                const ex = c.find(p => p.id === id);
                 if (ex) ex.cantidad++;
-                else c.push({ id, nombre, precio, cantidad: 1 });
+                else    c.push({ id, nombre, precio, cantidad: 1 });
 
                 saveCarrito(c);
-            }
-
-            document.querySelectorAll(".btn-add-grid").forEach(btn => {
-                btn.addEventListener("click", () => {
-
-                    const card = btn.closest(".product-card");
-
-                    agregar(
-                        card.dataset.id,
-                        card.dataset.nombre,
-                        parseFloat(card.dataset.precio)
-                    );
-
-                    alert("Producto agregado al carrito");
-                });
+                alert("Producto agregado al carrito");
             });
+        }
 
-        })();
+        document.addEventListener("DOMContentLoaded", () => {
+            cargarProductosOficina();
+        });
     </script>
 
-    <!-- BUSCADOR GLOBAL: View → Model/js -->
+    <!-- BUSCADOR GLOBAL + SESIÓN USUARIO -->
     <script src="../Model/js/busqueda-global.js"></script>
+    <script src="../Model/js/sesion-usuario.js"></script>
 
 </body>
 </html>

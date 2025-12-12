@@ -34,10 +34,8 @@
             </div>
         </div>
 
-        <div class="header-right">
-            <a href="login.html" class="link-header">Acceder / Registrarse</a>
-            <a href="carrito.html" class="link-header">🛒 Carrito</a>
-        </div>
+        <!-- ⭐ AHORA LO RELLENA sesion-usuario.js ⭐ -->
+        <div class="header-right" id="header-usuario"></div>
     </header>
 
     <!-- NAV -->
@@ -161,7 +159,7 @@
             <!-- CONTENIDO -->
             <section class="category-main">
                 <div class="category-main-header">
-                    <p>Mostrando 1–4 de 4 resultados</p>
+                    <p id="textoResultadosPapeleria">Mostrando 0 resultados</p>
 
                     <div class="category-sort">
                         <label for="ordenPapeleria">Ordenar por:</label>
@@ -173,46 +171,8 @@
                     </div>
                 </div>
 
-                <div id="gridPapeleria" class="product-grid">
-
-                    <!-- PRODUCTOS CON IMAGEN -->
-                    <article class="product-card" data-id="PA001" data-nombre="Cartulina IRIS" data-precio="1.03" data-tipo="cartulina">
-                        <div class="product-image">
-                            <img src="../Model/imagenes/Cartulina_IRIS.jpg" alt="Cartulina IRIS">
-                        </div>
-                        <h3>Cartulina IRIS</h3>
-                        <p class="product-price">$1.03 + IVA</p>
-                        <button class="btn-add-grid">Agregar al carrito</button>
-                    </article>
-
-                    <article class="product-card" data-id="PA002" data-nombre="Cartón corrugado sencillo" data-precio="0.45" data-tipo="corrugado">
-                        <div class="product-image">
-                            <img src="../Model/imagenes/Cartón_corrugado_sencillo.jpg" alt="Cartón corrugado sencillo">
-                        </div>
-                        <h3>Cartón corrugado sencillo</h3>
-                        <p class="product-price">$0.45 + IVA</p>
-                        <button class="btn-add-grid">Agregar al carrito</button>
-                    </article>
-
-                    <article class="product-card" data-id="PA003" data-nombre="Cartulina Bristol blanca A4" data-precio="0.31" data-tipo="cartulina">
-                        <div class="product-image">
-                            <img src="../Model/imagenes/Cartulina_Bristol_blanca_A4.jpg" alt="Cartulina Bristol blanca A4">
-                        </div>
-                        <h3>Cartulina Bristol blanca A4</h3>
-                        <p class="product-price">$0.31 + IVA</p>
-                        <button class="btn-add-grid">Agregar al carrito</button>
-                    </article>
-
-                    <article class="product-card" data-id="PA004" data-nombre="Cartulina Bristol pliego 70x100" data-precio="0.58" data-tipo="cartulina">
-                        <div class="product-image">
-                            <img src="../Model/imagenes/Cartulina_Bristol_pliego_70x100.jpg" alt="Cartulina Bristol pliego 70x100">
-                        </div>
-                        <h3>Cartulina Bristol pliego 70x100</h3>
-                        <p class="product-price">$0.58 + IVA</p>
-                        <button class="btn-add-grid">Agregar al carrito</button>
-                    </article>
-
-                </div>
+                <!-- Aquí se dibujan los productos desde la BD -->
+                <div id="gridPapeleria" class="product-grid"></div>
             </section>
         </div>
     </main>
@@ -221,43 +181,122 @@
         <p>MegaSantiago © 2025 - Todos los derechos reservados</p>
     </footer>
 
-    <!-- JS ORDEN + FILTROS + CARRITO -->
+    <!-- ============================= -->
+    <!--   JS PAPELERÍA (CON API)     -->
+    <!-- ============================= -->
     <script>
-        /* ---------------- ORDENAR ---------------- */
-        (function () {
-            const selectOrden = document.getElementById('ordenPapeleria');
-            const grid = document.getElementById('gridPapeleria');
+        const API_URL = "/MegaSantiagoFront/Controller/productosController.php";
 
-            function ordenar() {
+        function formatearDinero(valor) {
+            return "$" + Number(valor).toFixed(2);
+        }
+
+        function detectarTipoDesdeNombre(nombre) {
+            const n = (nombre || "").toLowerCase();
+            if (n.includes("cartulina")) return "cartulina";
+            if (n.includes("corrugado")) return "corrugado";
+            if (n.includes("papel"))     return "papel";
+            return "otros";
+        }
+
+        function crearTarjetaPapeleria(prod) {
+            const precioBase    = parseFloat(prod.precio);
+            const precioOferta  = prod.precio_oferta ? parseFloat(prod.precio_oferta) : null;
+            const precioMostrar = (precioOferta && precioOferta > 0) ? precioOferta : precioBase;
+
+            const rutaImagen = prod.imagen
+                ? "../Model/" + prod.imagen       // ej: "imagenes/Cartulina_IRIS.jpg"
+                : "../Model/imagenes/sin-imagen.png";
+
+            const tipo = detectarTipoDesdeNombre(prod.nombre);
+
+            return `
+                <article class="product-card"
+                         data-id="${prod.id}"
+                         data-precio="${precioMostrar}"
+                         data-tipo="${tipo}">
+                    <div class="product-image">
+                        <img src="${rutaImagen}" alt="${prod.nombre}">
+                    </div>
+                    <h3>${prod.nombre}</h3>
+                    <p class="product-price">${formatearDinero(precioMostrar)} + IVA</p>
+                    <button class="btn-add-grid" type="button">Agregar al carrito</button>
+                </article>
+            `;
+        }
+
+        async function cargarProductosPapeleria() {
+            const grid  = document.getElementById("gridPapeleria");
+            const texto = document.getElementById("textoResultadosPapeleria");
+
+            grid.innerHTML = "<p>Cargando productos...</p>";
+
+            try {
+                // IMPORTANTE: el slug de la categoría debe ser "papeleria"
+                const resp = await fetch(`${API_URL}?accion=listarPorCategoria&categoria=papeleria`);
+                const data = await resp.json();
+
+                console.log("Papelería API:", data);
+
+                if (data.error) {
+                    grid.innerHTML = `<p>Error: ${data.error}</p>`;
+                    texto.textContent = "Mostrando 0 resultados";
+                    return;
+                }
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    grid.innerHTML = "<p>No hay productos disponibles en Papelería.</p>";
+                    texto.textContent = "Mostrando 0 resultados";
+                    return;
+                }
+
+                grid.innerHTML = data.map(crearTarjetaPapeleria).join("");
+                texto.textContent = `Mostrando ${data.length} resultado${data.length > 1 ? "s" : ""}`;
+
+                inicializarOrdenPapeleria();
+                inicializarFiltrosPapeleria();
+                inicializarCarritoPapeleria();
+
+            } catch (err) {
+                console.error(err);
+                grid.innerHTML = "<p>Error al cargar productos.</p>";
+                texto.textContent = "Mostrando 0 resultados";
+            }
+        }
+
+        /* ---------------- ORDENAR ---------------- */
+        function inicializarOrdenPapeleria() {
+            const selectOrden = document.getElementById("ordenPapeleria");
+            const grid = document.getElementById("gridPapeleria");
+
+            selectOrden.addEventListener("change", () => {
                 const opcion = selectOrden.value;
-                const cards = Array.from(grid.querySelectorAll('.product-card'));
-                if (opcion === 'default') return;
+                const cards = Array.from(grid.querySelectorAll(".product-card"));
+                if (opcion === "default") return;
 
                 cards.sort((a, b) => {
                     const pa = parseFloat(a.dataset.precio);
                     const pb = parseFloat(b.dataset.precio);
-                    return opcion === 'precio-asc' ? pa - pb : pb - pa;
+                    return opcion === "precio-asc" ? pa - pb : pb - pa;
                 });
 
                 cards.forEach(c => grid.appendChild(c));
-            }
-
-            selectOrden.addEventListener('change', ordenar);
-        })();
+            });
+        }
 
         /* ---------------- FILTROS ---------------- */
-        (function () {
-            const grid         = document.getElementById('gridPapeleria');
-            const cards        = Array.from(grid.querySelectorAll('.product-card'));
-            const selectTipo   = document.querySelector('.sidebar-select-tipo');
-            const rangePrecio  = document.querySelector('.sidebar-range');
-            const infoPrecio   = document.querySelector('.sidebar-range-info');
-            const btnFiltrar   = document.querySelector('.btn-sidebar');
+        function inicializarFiltrosPapeleria() {
+            const grid        = document.getElementById("gridPapeleria");
+            const cards       = Array.from(grid.querySelectorAll(".product-card"));
+            const selectTipo  = document.querySelector(".sidebar-select-tipo");
+            const rangePrecio = document.querySelector(".sidebar-range");
+            const infoPrecio  = document.querySelector(".sidebar-range-info");
+            const btnFiltrar  = document.querySelector(".btn-sidebar");
 
-            infoPrecio.textContent = 'Precio máx: $' + rangePrecio.value;
+            infoPrecio.textContent = "Precio máx: $" + rangePrecio.value;
 
-            rangePrecio.addEventListener('input', () => {
-                infoPrecio.textContent = 'Precio máx: $' + rangePrecio.value;
+            rangePrecio.addEventListener("input", () => {
+                infoPrecio.textContent = "Precio máx: $" + rangePrecio.value;
             });
 
             function aplicarFiltros() {
@@ -265,56 +304,59 @@
                 const maxPrecio = parseFloat(rangePrecio.value);
 
                 cards.forEach(card => {
-                    const precio = parseFloat(card.dataset.precio);
+                    const precio   = parseFloat(card.dataset.precio);
                     const tipoCard = card.dataset.tipo;
 
                     const cumpleTipo =
-                        tipoSeleccionado === 'todos' ||
+                        tipoSeleccionado === "todos" ||
                         tipoCard === tipoSeleccionado;
 
                     const cumplePrecio = precio <= maxPrecio;
 
-                    card.style.display = (cumpleTipo && cumplePrecio)
-                        ? ''
-                        : 'none';
+                    card.style.display = (cumpleTipo && cumplePrecio) ? "" : "none";
                 });
             }
 
-            btnFiltrar.addEventListener('click', aplicarFiltros);
-        })();
+            btnFiltrar.addEventListener("click", aplicarFiltros);
+        }
 
         /* ---------------- CARRITO ---------------- */
-        (function () {
+        function inicializarCarritoPapeleria() {
+            const grid = document.getElementById("gridPapeleria");
+
             function obtenerCarrito() {
-                return JSON.parse(localStorage.getItem('carritoMega') || '[]');
+                return JSON.parse(localStorage.getItem("carritoMega") || "[]");
             }
             function guardarCarrito(carrito) {
-                localStorage.setItem('carritoMega', JSON.stringify(carrito));
+                localStorage.setItem("carritoMega", JSON.stringify(carrito));
             }
-            function agregarAlCarrito(id, nombre, precio) {
+
+            grid.addEventListener("click", (e) => {
+                if (!e.target.classList.contains("btn-add-grid")) return;
+
+                const card = e.target.closest(".product-card");
+                const id    = card.dataset.id;
+                const precio= parseFloat(card.dataset.precio);
+                const nombre= card.querySelector("h3").textContent;
+
                 let carrito = obtenerCarrito();
                 const existe = carrito.find(p => p.id === id);
                 if (existe) existe.cantidad++;
                 else carrito.push({ id, nombre, precio, cantidad: 1 });
-                guardarCarrito(carrito);
-            }
 
-            document.querySelectorAll('.btn-add-grid').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const card = btn.closest('.product-card');
-                    agregarAlCarrito(
-                        card.dataset.id,
-                        card.dataset.nombre,
-                        parseFloat(card.dataset.precio)
-                    );
-                    alert('Producto agregado al carrito');
-                });
+                guardarCarrito(carrito);
+                alert("Producto agregado al carrito");
             });
-        })();
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            cargarProductosPapeleria();
+        });
     </script>
 
-    <!-- BUSCADOR GLOBAL: View → Model/js -->
+    <!-- BUSCADOR GLOBAL + SESIÓN USUARIO -->
     <script src="../Model/js/busqueda-global.js"></script>
+    <script src="../Model/js/sesion-usuario.js"></script>
 
 </body>
 </html>

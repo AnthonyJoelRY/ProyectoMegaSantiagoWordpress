@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaSantiago | Productos de Arte</title>
+    <title>MegaSantiago | Bazar</title>
 
     <!-- CSS desde View → Model -->
     <link rel="stylesheet" href="../Model/csss estilos/estilos.css">
@@ -33,16 +33,14 @@
             </div>
         </div>
 
-        <div class="header-right">
-            <a href="login.html" class="link-header">Acceder / Registrarse</a>
-            <a href="carrito.html" class="link-header">🛒 Carrito</a>
-        </div>
+        <!-- Se rellena con el usuario logueado -->
+        <div class="header-right" id="header-usuario"></div>
     </header>
 
     <!-- NAV -->
     <nav class="nav-principal">
         <ul class="menu">
-            <li class="menu-item has-mega">
+            <li class="menu-item has-mega active">
                 <a href="bazar.html">BAZAR ▾</a>
                 <div class="mega-menu columnas-3">
                     <div class="col-mega">
@@ -51,7 +49,7 @@
                         <a href="bazar.html">Decoración fiestas</a>
                     </div>
                     <div class="col-mega">
-                        <h4>HOGAR & FAMILIA</h4>
+                        <h4>HOGAR &amp; FAMILIA</h4>
                         <a href="bazar.html">Organizadores</a>
                         <a href="bazar.html">Velas</a>
                     </div>
@@ -72,7 +70,7 @@
                 </ul>
             </li>
 
-            <li class="menu-item has-sub active">
+            <li class="menu-item has-sub">
                 <a href="productos-arte.html">PRODUCTOS DE ARTE ▾</a>
                 <ul class="submenu">
                     <li><a href="productos-arte.html">Pinturas</a></li>
@@ -109,7 +107,7 @@
             </li>
 
             <li class="menu-item">
-              <a href="../index.html#promociones">PROMOCIONES</a>
+                <a href="../index.html#promociones">PROMOCIONES</a>
             </li>
         </ul>
     </nav>
@@ -117,8 +115,8 @@
     <!-- HERO -->
     <section class="category-hero">
         <div class="category-hero-inner">
-            <h1>Productos de Arte</h1>
-            <p>Materiales para dibujo, pintura y manualidades creativas.</p>
+            <h1>Bazar</h1>
+            <p>Decoración, fiestas y miles de detalles para alegrar cada momento.</p>
         </div>
     </section>
 
@@ -130,25 +128,26 @@
             <aside class="category-sidebar">
                 <h3>Categorías</h3>
                 <ul class="category-list">
-                    <li><a href="bazar.html">Bazar</a></li>
+                    <li class="active"><a href="bazar.html">Bazar</a></li>
                     <li><a href="papeleria.html">Papelería</a></li>
-                    <li class="active"><a href="productos-arte.html">Productos de arte</a></li>
+                    <li><a href="productos-arte.html">Productos de arte</a></li>
                     <li><a href="suministros-oficina.html">Suministros de oficina</a></li>
                     <li><a href="utiles-escolares.html">Útiles escolares</a></li>
                 </ul>
 
+                <!-- FILTRO TIPO -->
                 <div class="sidebar-block">
                     <h4>Filtrar por</h4>
                     <label class="sidebar-label">Tipo</label>
-
                     <select class="sidebar-select sidebar-select-tipo">
                         <option value="todos">Cualquier tipo</option>
-                        <option value="acrilica">Pintura acrílica</option>
-                        <option value="espuma">Espuma flex</option>
-                        <option value="marcadores">Marcadores</option>
+                        <option value="globos">Globos</option>
+                        <option value="decoracion">Decoración</option>
+                        <option value="regalos">Regalos / varios</option>
                     </select>
                 </div>
 
+                <!-- FILTRO PRECIO -->
                 <div class="sidebar-block">
                     <h4>Filtrar por precio</h4>
                     <input type="range" min="0" max="100" value="40" class="sidebar-range">
@@ -160,11 +159,11 @@
             <!-- PRODUCTOS -->
             <section class="category-main">
                 <div class="category-main-header">
-                    <p>Mostrando 1–4 de 4 resultados</p>
+                    <p id="textoResultadosBazar">Mostrando 0 resultados</p>
 
                     <div class="category-sort">
-                        <label for="ordenArte">Ordenar por:</label>
-                        <select id="ordenArte" class="sidebar-select">
+                        <label for="ordenBazar">Ordenar por:</label>
+                        <select id="ordenBazar" class="sidebar-select">
                             <option value="default">Predeterminado</option>
                             <option value="precio-asc">Precio: menor a mayor</option>
                             <option value="precio-desc">Precio: mayor a menor</option>
@@ -172,59 +171,8 @@
                     </div>
                 </div>
 
-                <div id="gridArte" class="product-grid">
-
-                    <article class="product-card"
-                             data-id="AR001"
-                             data-nombre="Pintura acrílica"
-                             data-precio="0.58"
-                             data-tipo="acrilica">
-                        <div class="product-image">
-                            <img src="../Model/imagenes/Pintura_acrílica.jpg" alt="Pintura acrílica">
-                        </div>
-                        <h3>Pintura acrílica</h3>
-                        <p class="product-price">$0.58 + IVA</p>
-                        <button class="btn-add-grid">Agregar al carrito</button>
-                    </article>
-
-                    <article class="product-card"
-                             data-id="AR002"
-                             data-nombre="Plancha de espuma flex"
-                             data-precio="2.05"
-                             data-tipo="espuma">
-                        <div class="product-image">
-                            <img src="../Model/imagenes/Planchas_de_espuma_flex.jpeg" alt="Plancha de espuma flex">
-                        </div>
-                        <h3>Planchas de espuma flex</h3>
-                        <p class="product-price">$2.05 + IVA</p>
-                        <button class="btn-add-grid">Agregar al carrito</button>
-                    </article>
-
-                    <article class="product-card"
-                             data-id="AR003"
-                             data-nombre="Marcador Edding para pizarra"
-                             data-precio="1.51"
-                             data-tipo="marcadores">
-                        <div class="product-image">
-                            <img src="../Model/imagenes/Marcador_Edding_para_pizarra.jpg" alt="Marcador Edding para pizarra">
-                        </div>
-                        <h3>Marcador Edding para pizarra</h3>
-                        <p class="product-price">$1.51 + IVA</p>
-                        <button class="btn-add-grid">Agregar al carrito</button>
-                    </article>
-
-                    <article class="product-card"
-                             data-id="AR004"
-                             data-nombre="Marcadores Pelikan"
-                             data-precio="0.49"
-                             data-tipo="marcadores">
-                        <div class="product-image">
-                            <img src="../Model/imagenes/Marcadores_Pelikan.jpg" alt="Marcadores Pelikan">
-                        </div>
-                        <h3>Marcadores Pelikan</h3>
-                        <p class="product-price">$0.49 + IVA</p>
-                        <button class="btn-add-grid">Agregar al carrito</button>
-                    </article>
+                <div id="gridBazar" class="product-grid">
+                    <!-- Aquí se cargan los productos desde la BD -->
                 </div>
             </section>
         </div>
@@ -234,41 +182,121 @@
         <p>MegaSantiago © 2025 - Todos los derechos reservados</p>
     </footer>
 
-    <!-- ORDEN -->
+    <!-- ========================= -->
+    <!--   JS BAZAR (con BD)      -->
+    <!-- ========================= -->
     <script>
-        (function () {
-            const selectOrden = document.getElementById('ordenArte');
-            const grid = document.getElementById('gridArte');
+        const API_URL = "/MegaSantiagoFront/Controller/productosController.php";
 
-            function ordenar() {
+        function formatearDinero(valor) {
+            return "$" + Number(valor).toFixed(2);
+        }
+
+        // Detecta tipo de producto para el filtro según el nombre
+        function detectarTipoBazar(nombre) {
+            const n = (nombre || "").toLowerCase();
+            if (n.includes("globo"))       return "globos";
+            if (n.includes("astro") ||
+                n.includes("decor") ||
+                n.includes("fiesta") )     return "decoracion";
+            if (n.includes("regalo") ||
+                n.includes("detalle"))     return "regalos";
+            return "regalos"; // categoría genérica
+        }
+
+        function crearTarjetaBazar(prod) {
+            const precioBase    = parseFloat(prod.precio);
+            const precioOferta  = prod.precio_oferta ? parseFloat(prod.precio_oferta) : null;
+            const precioMostrar = (precioOferta && precioOferta > 0) ? precioOferta : precioBase;
+
+            const rutaImagen = prod.imagen
+                ? "../Model/" + prod.imagen
+                : "../Model/imagenes/sin-imagen.png";
+
+            const tipo = detectarTipoBazar(prod.nombre);
+
+            return `
+                <article class="product-card"
+                         data-id="${prod.id}"
+                         data-precio="${precioMostrar}"
+                         data-tipo="${tipo}">
+                    <div class="product-image">
+                        <img src="${rutaImagen}" alt="${prod.nombre}">
+                    </div>
+                    <h3>${prod.nombre}</h3>
+                    <p class="product-price">${formatearDinero(precioMostrar)} + IVA</p>
+                    <button class="btn-add-grid" type="button">Agregar al carrito</button>
+                </article>
+            `;
+        }
+
+        async function cargarProductosBazar() {
+            const grid  = document.getElementById("gridBazar");
+            const texto = document.getElementById("textoResultadosBazar");
+
+            grid.innerHTML = "<p>Cargando productos...</p>";
+
+            try {
+                // Usa el slug de la categoría: 'bazar'
+                const resp = await fetch(`${API_URL}?accion=listarPorCategoria&categoria=bazar`);
+                const data = await resp.json();
+
+                console.log("Bazar API:", data);
+
+                if (data.error) {
+                    grid.innerHTML = `<p>Error: ${data.error}</p>`;
+                    texto.textContent = "Mostrando 0 resultados";
+                    return;
+                }
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    grid.innerHTML = "<p>No hay productos de bazar.</p>";
+                    texto.textContent = "Mostrando 0 resultados";
+                    return;
+                }
+
+                grid.innerHTML = data.map(crearTarjetaBazar).join("");
+                texto.textContent =
+                    `Mostrando ${data.length} resultado${data.length > 1 ? "s" : ""}`;
+
+                inicializarOrdenBazar();
+                inicializarFiltrosBazar();
+                inicializarCarritoBazar();
+
+            } catch (err) {
+                console.error(err);
+                grid.innerHTML = "<p>Error al cargar productos.</p>";
+                texto.textContent = "Mostrando 0 resultados";
+            }
+        }
+
+        /* -------- ORDENAR -------- */
+        function inicializarOrdenBazar() {
+            const selectOrden = document.getElementById("ordenBazar");
+            const grid = document.getElementById("gridBazar");
+
+            selectOrden.addEventListener("change", () => {
                 const opcion = selectOrden.value;
-                const cards = Array.from(grid.querySelectorAll('.product-card'));
-
-                if (opcion === 'default') return;
+                const cards = Array.from(grid.querySelectorAll(".product-card"));
+                if (opcion === "default") return;
 
                 cards.sort((a, b) => {
                     const pa = parseFloat(a.dataset.precio);
                     const pb = parseFloat(b.dataset.precio);
-
-                    return opcion === 'precio-asc' ? pa - pb : pb - pa;
+                    return opcion === "precio-asc" ? pa - pb : pb - pa;
                 });
 
                 cards.forEach(c => grid.appendChild(c));
-            }
+            });
+        }
 
-            selectOrden.addEventListener('change', ordenar);
-        })();
-    </script>
-
-    <!-- FILTROS -->
-    <script>
-        (function () {
-            const grid        = document.getElementById('gridArte');
-            const cards       = Array.from(grid.querySelectorAll('.product-card'));
-            const selectTipo  = document.querySelector('.sidebar-select-tipo');
-            const rangePrecio = document.querySelector('.sidebar-range');
-            const infoPrecio  = document.querySelector('.sidebar-range-info');
-            const btnFiltrar  = document.querySelector('.btn-sidebar');
+        /* -------- FILTROS -------- */
+        function inicializarFiltrosBazar() {
+            const grid        = document.getElementById("gridBazar");
+            const selectTipo  = document.querySelector(".sidebar-select-tipo");
+            const rangePrecio = document.querySelector(".sidebar-range");
+            const infoPrecio  = document.querySelector(".sidebar-range-info");
+            const btnFiltrar  = document.querySelector(".btn-sidebar");
 
             infoPrecio.textContent = "Precio máx: $" + rangePrecio.value;
 
@@ -277,14 +305,16 @@
             });
 
             function aplicarFiltros() {
-                const tipo = selectTipo.value;
                 const maxPrecio = parseFloat(rangePrecio.value);
+                const tipoSel   = selectTipo.value;
+
+                const cards = Array.from(grid.querySelectorAll(".product-card"));
 
                 cards.forEach(card => {
-                    const precio = parseFloat(card.dataset.precio);
-                    const t = card.dataset.tipo;
+                    const precio   = parseFloat(card.dataset.precio);
+                    const tipoCard = card.dataset.tipo;
 
-                    const okTipo = tipo === "todos" || t === tipo;
+                    const okTipo   = (tipoSel === "todos" || tipoCard === tipoSel);
                     const okPrecio = precio <= maxPrecio;
 
                     card.style.display = (okTipo && okPrecio) ? "" : "none";
@@ -292,44 +322,46 @@
             }
 
             btnFiltrar.addEventListener("click", aplicarFiltros);
-        })();
-    </script>
+        }
 
-    <!-- CARRITO -->
-    <script>
-        (function () {
+        /* -------- CARRITO -------- */
+        function inicializarCarritoBazar() {
+            const grid = document.getElementById("gridBazar");
+
             function obtenerCarrito() {
                 return JSON.parse(localStorage.getItem("carritoMega") || "[]");
             }
             function guardarCarrito(c) {
                 localStorage.setItem("carritoMega", JSON.stringify(c));
             }
-            function agregarAlCarrito(id, nombre, precio) {
-                let c = obtenerCarrito();
-                let existe = c.find(p => p.id === id);
+
+            grid.addEventListener("click", (e) => {
+                if (!e.target.classList.contains("btn-add-grid")) return;
+
+                const card   = e.target.closest(".product-card");
+                const id     = card.dataset.id;
+                const nombre = card.querySelector("h3").textContent;
+                const precio = parseFloat(card.dataset.precio);
+
+                let carrito  = obtenerCarrito();
+                const existe = carrito.find(p => p.id === id);
 
                 if (existe) existe.cantidad++;
-                else c.push({ id, nombre, precio, cantidad: 1 });
+                else carrito.push({ id, nombre, precio, cantidad: 1 });
 
-                guardarCarrito(c);
-            }
-
-            document.querySelectorAll(".btn-add-grid").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    const card = btn.closest(".product-card");
-                    agregarAlCarrito(
-                        card.dataset.id,
-                        card.dataset.nombre,
-                        parseFloat(card.dataset.precio)
-                    );
-                    alert("Producto agregado al carrito");
-                });
+                guardarCarrito(carrito);
+                alert("Producto agregado al carrito");
             });
-        })();
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            cargarProductosBazar();
+        });
     </script>
 
-    <!-- BUSCADOR GLOBAL: View → Model/js -->
+    <!-- BUSCADOR GLOBAL + SESIÓN USUARIO -->
     <script src="../Model/js/busqueda-global.js"></script>
+    <script src="../Model/js/sesion-usuario.js"></script>
 
 </body>
 </html>

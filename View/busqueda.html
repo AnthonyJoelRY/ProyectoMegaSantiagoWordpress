@@ -45,23 +45,18 @@
             <li class="menu-item has-mega">
                 <a href="bazar.html">BAZAR ▾</a>
             </li>
-
             <li class="menu-item has-sub">
                 <a href="papeleria.html">PAPELERÍA ▾</a>
             </li>
-
             <li class="menu-item has-sub">
                 <a href="productos-arte.html">PRODUCTOS DE ARTE ▾</a>
             </li>
-
             <li class="menu-item has-mega">
                 <a href="suministros-oficina.html">SUMINISTROS DE OFICINA ▾</a>
             </li>
-
             <li class="menu-item has-sub">
                 <a href="utiles-escolares.html">ÚTILES ESCOLARES ▾</a>
             </li>
-
             <li class="menu-item">
                 <a href="../index.html#promociones">PROMOCIONES</a>
             </li>
@@ -89,10 +84,10 @@
         <p>MegaSantiago © 2025 - Todos los derechos reservados</p>
     </footer>
 
-    <!-- CARGAR LA "BD" GLOBAL DE PRODUCTOS (View → Model/js) -->
-    <script src="../Model/js/productos-data.js"></script>
-
     <script>
+        // 🔹 Misma URL de la API que en bazar.html
+        const API_URL = "/MegaSantiagoFront/Controller/productosController.php";
+
         /* ================== BUSCAR (redirección) ================== */
         function realizarBusqueda() {
             const input = document.getElementById('buscador');
@@ -128,80 +123,105 @@
             guardarCarrito(carrito);
         }
 
-        /* ================== PINTAR RESULTADOS ================== */
-        function renderResultados() {
+        /* ================== CREAR TARJETA DESDE BD ================== */
+        function crearTarjetaProducto(prod) {
+            const precioBase   = parseFloat(prod.precio);
+            const precioOferta = prod.precio_oferta ? parseFloat(prod.precio_oferta) : null;
+            const precioMostrar = (precioOferta && precioOferta > 0) ? precioOferta : precioBase;
+
+            // Ruta de imagen (igual lógica que en bazar.html)
+            let rutaImagen = "../Model/imagenes/sin-imagen.png";
+            if (prod.imagen && prod.imagen.trim() !== "") {
+                let nombreArchivo = prod.imagen.trim();
+
+                // Si viene con prefijo "imagenes/..." lo quitamos
+                nombreArchivo = nombreArchivo.replace(/^imagenes[\/\\]/, "");
+
+                rutaImagen = "../Model/imagenes/" + nombreArchivo;
+            }
+
+            const article = document.createElement('article');
+            article.className = 'product-card';
+            article.dataset.id = prod.id;
+            article.dataset.precio = precioMostrar.toFixed(2);
+
+            article.innerHTML = `
+                <div class="product-image">
+                    <img src="${rutaImagen}" alt="${prod.nombre}">
+                </div>
+                <h3>${prod.nombre}</h3>
+                <p class="product-price">$${precioMostrar.toFixed(2)} + IVA</p>
+                <button class="btn-add-grid" type="button">Agregar al carrito</button>
+            `;
+
+            const btn = article.querySelector('.btn-add-grid');
+            btn.addEventListener('click', () => {
+                agregarAlCarrito(prod.id, prod.nombre, precioMostrar);
+                alert('Producto agregado al carrito');
+            });
+
+            return article;
+        }
+
+        /* ================== CARGAR RESULTADOS DESDE LA API ================== */
+        async function cargarResultados() {
             const termino = obtenerTerminoBusqueda();
             const spanTexto = document.getElementById('texto-busqueda');
             const resumen   = document.getElementById('resumen-resultados');
             const grid      = document.getElementById('grid-resultados');
 
-            // Texto de cabecera
-            spanTexto.textContent = '“' + termino + '”';
+            spanTexto.textContent = termino ? '“' + termino + '”' : '';
 
-            // Usar TODOS los productos definidos en window.PRODUCTOS_MEGA
-            const PRODUCTOS = (window.PRODUCTOS_MEGA || []);
-
-            const tLower = termino.toLowerCase();
-            const resultados = PRODUCTOS.filter(p =>
-                (p.nombre || '').toLowerCase().includes(tLower)
-            );
-
-            grid.innerHTML = '';
-
-            if (resultados.length === 0) {
-                resumen.textContent = 'No se encontraron productos para este término.';
+            if (!termino) {
+                resumen.textContent = 'Escribe algo en el buscador para comenzar.';
+                grid.innerHTML = '';
                 return;
             }
 
-            resumen.textContent = `Mostrando ${resultados.length} resultado${resultados.length > 1 ? 's' : ''}`;
+            grid.innerHTML = '<p>Cargando resultados...</p>';
 
-            resultados.forEach(p => {
-                const card = document.createElement('article');
-                card.className = 'product-card';
+            try {
+                const resp = await fetch(`${API_URL}?accion=buscar&q=${encodeURIComponent(termino)}`);
+                const data = await resp.json();
 
-                // dataset para el carrito
-                card.dataset.id     = p.id;
-                card.dataset.nombre = p.nombre;
-                card.dataset.precio = p.precio.toFixed(2);
+                console.log('RESPUESTA BUSQUEDA:', data);
 
-                // Ajustar rutas de imágenes a ../Model/imagenes/...
-                let imgSrc = p.imagen || '';
-                if (imgSrc.startsWith('../imagenes/')) {
-                    imgSrc = imgSrc.replace('../imagenes/', '../Model/imagenes/');
-                } else if (imgSrc.startsWith('imagenes/')) {
-                    imgSrc = '../Model/' + imgSrc;
+                if (data.error) {
+                    resumen.textContent = 'Ocurrió un error al buscar.';
+                    grid.innerHTML = `<p>Error: ${data.error}</p>`;
+                    return;
                 }
 
-                card.innerHTML = `
-                    <div class="product-image">
-                        <img src="${imgSrc}" alt="${p.nombre}">
-                    </div>
-                    <h3>${p.nombre}</h3>
-                    <p class="product-price">$${p.precio.toFixed(2)} + IVA</p>
-                    <button class="btn-add-grid" type="button">Agregar al carrito</button>
-                `;
+                if (!Array.isArray(data) || data.length === 0) {
+                    resumen.textContent = 'No se encontraron productos para este término.';
+                    grid.innerHTML = '<p>No hay productos disponibles.</p>';
+                    return;
+                }
 
-                const btn = card.querySelector('.btn-add-grid');
-                btn.addEventListener('click', () => {
-                    agregarAlCarrito(p.id, p.nombre, p.precio);
-                    alert('Producto agregado al carrito');
+                resumen.textContent = `Mostrando ${data.length} resultado${data.length > 1 ? 's' : ''}`;
+                grid.innerHTML = '';
+
+                data.forEach(prod => {
+                    const card = crearTarjetaProducto(prod);
+                    grid.appendChild(card);
                 });
 
-                grid.appendChild(card);
-            });
+            } catch (error) {
+                console.error(error);
+                resumen.textContent = 'Ocurrió un error al buscar.';
+                grid.innerHTML = '<p>Error al cargar los resultados.</p>';
+            }
         }
 
-        // 🔹 Rellenar buscador + permitir Enter + pintar resultados
+        // 🔹 Rellenar buscador + permitir Enter + cargar resultados
         document.addEventListener('DOMContentLoaded', () => {
             const input = document.getElementById('buscador');
 
-            // 1) Rellenar el buscador con el término actual de la URL
             const terminoActual = obtenerTerminoBusqueda();
             if (input && terminoActual) {
                 input.value = terminoActual;
             }
 
-            // 2) Permitir buscar con Enter en esta página
             if (input) {
                 input.addEventListener('keyup', (e) => {
                     if (e.key === 'Enter') {
@@ -210,8 +230,7 @@
                 });
             }
 
-            // 3) Renderizar resultados iniciales
-            renderResultados();
+            cargarResultados();
         });
     </script>
 

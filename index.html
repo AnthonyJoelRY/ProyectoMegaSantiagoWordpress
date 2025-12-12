@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MegaSantiago | Inicio</title>
+
+    <!-- CSS ahora desde Model (index.html está en la raíz) -->
+    <link rel="stylesheet" href="Model/csss estilos/estilos.css">
+</head>
+<body>
+
+    <div class="top-bar">
+        <p>ENCUENTRA DE TODO EN MEGASANTIAGO - OFERTAS DEL MES</p>
+    </div>
+
+    <!-- ENCABEZADO -->
+    <header class="main-header">
+        <div class="header-left">
+            <img src="Model/imagenes/Logo_MegaSantiago.png" alt="MegaSantiago" class="logo-mega">
+        </div>
+
+        <div class="header-center">
+            <div class="search-box">
+                <input id="buscador" type="text" placeholder="Busca tu producto">
+                <button class="btn-search" type="button" onclick="realizarBusqueda()">
+                    <svg width="18" height="18" fill="white" viewBox="0 0 24 24">
+                        <path d="M21 20l-5.8-5.8a7 7 0 10-1.4 1.4L20 21zM5 11a6 6 0 1112 0A6 6 0 015 11z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- ESTE BLOQUE LO REEMPLAZA sesion-usuario.js SI HAY LOGIN -->
+        <div class="header-right" id="header-usuario">
+            <a href="View/login.html" class="link-header">Acceder / Registrarse</a>
+            <a href="View/carrito.html" class="link-header">🛒 Carrito</a>
+        </div>
+    </header>
+
+    <!-- NAV PRINCIPAL -->
+    <nav class="nav-principal">
+        <ul class="menu">
+            <li class="menu-item has-mega"><a href="View/bazar.html">BAZAR ▾</a></li>
+            <li class="menu-item has-sub"><a href="View/papeleria.html">PAPELERÍA ▾</a></li>
+            <li class="menu-item has-sub"><a href="View/productos-arte.html">PRODUCTOS DE ARTE ▾</a></li>
+            <li class="menu-item has-mega"><a href="View/suministros-oficina.html">SUMINISTROS DE OFICINA ▾</a></li>
+            <li class="menu-item has-sub"><a href="View/utiles-escolares.html">ÚTILES ESCOLARES ▾</a></li>
+            <li class="menu-item"><a href="#promociones">PROMOCIONES</a></li>
+        </ul>
+    </nav>
+
+    <!-- BANNER -->
+    <section class="banner-principal">
+        <div class="banner-texto">
+            <h2>OFERTAS ESPECIALES MEGASANTIAGO</h2>
+            <p>Todo para tu oficina y tus clases al mejor precio.</p>
+            <button class="btn-primario" onclick="irPromociones()">Ver promociones</button>
+        </div>
+    </section>
+
+    <!-- PRODUCTOS MÁS VENDIDOS (desde BD) -->
+    <section class="seccion">
+        <h2 class="titulo-seccion">Productos más vendidos</h2>
+
+        <div id="gridMasVendidos" class="grid-categorias grid-best-sellers">
+            <!-- Se llena con JS desde la BD -->
+        </div>
+    </section>
+
+    <!-- PRODUCTOS DESTACADOS / OFERTAS (desde BD) -->
+    <section class="seccion">
+        <h2 class="titulo-seccion">Ofertas MegaSantiago</h2>
+
+        <div id="gridOfertas" class="carrusel-productos">
+            <!-- Se llena con JS desde la BD -->
+        </div>
+    </section>
+
+    <!-- PROMOCIONES ESPECIALES (desde BD) -->
+    <section id="promociones" class="seccion">
+        <h2 class="titulo-seccion">Promociones especiales</h2>
+
+        <div id="gridPromos" class="carrusel-productos">
+            <!-- Se llena con JS desde la BD (si quieres usar la tabla promociones) -->
+        </div>
+    </section>
+
+    <footer class="footer">
+        <p>MegaSantiago © 2025 - Todos los derechos reservados</p>
+    </footer>
+
+    <!-- ================= CONTROLADOR FRONT (BD + CARRITO) ================= -->
+    <script>
+        /* OJO: ahora ruta RELATIVA al proyecto */
+        const API_URL = "Controller/productosController.php";
+
+        /* ========= UTILIDADES ========= */
+        function formatearDinero(valor) {
+            return "$" + Number(valor).toFixed(2);
+        }
+
+        function obtenerCarrito() {
+            return JSON.parse(localStorage.getItem("carritoMega") || "[]");
+        }
+
+        function guardarCarrito(carrito) {
+            localStorage.setItem("carritoMega", JSON.stringify(carrito));
+        }
+
+        function agregarAlCarrito(id, nombre, precio) {
+            let carrito = obtenerCarrito();
+            const existe = carrito.find(p => p.id === id);
+
+            if (existe) {
+                existe.cantidad++;
+            } else {
+                carrito.push({ id, nombre, precio, cantidad: 1 });
+            }
+
+            guardarCarrito(carrito);
+        }
+
+        function wireBotonesCarrito(selector) {
+            document.querySelectorAll(selector).forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const card = btn.closest("[data-id]");
+                    if (!card) return;
+
+                    agregarAlCarrito(
+                        card.dataset.id,
+                        card.dataset.nombre,
+                        parseFloat(card.dataset.precio)
+                    );
+                    alert("Producto agregado al carrito");
+                });
+            });
+        }
+
+        /* ========= BÚSQUEDA ========= */
+        function realizarBusqueda() {
+            const input = document.getElementById("buscador");
+            if (!input) return;
+
+            const valor = input.value.trim();
+            if (!valor) return;
+
+            window.location.href = "View/busqueda.html?q=" + encodeURIComponent(valor);
+        }
+
+        function irPromociones() {
+            const seccion = document.getElementById("promociones");
+            if (seccion) {
+                seccion.scrollIntoView({ behavior: "smooth" });
+            }
+        }
+
+        /* ========= RENDERIZADO HTML DESDE BD ========= */
+
+        // Tarjetas "más vendidos"
+        function crearCardMasVendido(prod) {
+            const precioBase   = parseFloat(prod.precio);
+            const precioOferta = prod.precio_oferta ? parseFloat(prod.precio_oferta) : null;
+            const precioMostrado = (precioOferta && precioOferta > 0) ? precioOferta : precioBase;
+
+            const rutaImagen = prod.imagen
+                ? "Model/" + prod.imagen          // prod.imagen = "imagenes/archivo.jpg"
+                : "Model/imagenes/sin-imagen.png";
+
+            return `
+                <article class="card-categoria"
+                         data-id="${prod.id}"
+                         data-nombre="${prod.nombre}"
+                         data-precio="${precioMostrado}">
+                    <div class="circulo-img">
+                        <img src="${rutaImagen}" alt="${prod.nombre}">
+                    </div>
+                    <h3>${prod.nombre}</h3>
+                    <p class="best-price">${formatearDinero(precioMostrado)} + IVA</p>
+                    <button class="btn-best">Agregar al carrito</button>
+                </article>
+            `;
+        }
+
+        // Tarjetas de "ofertas / carrusel"
+        function crearCardOferta(prod) {
+            const precioBase   = parseFloat(prod.precio);
+            const precioOferta = prod.precio_oferta ? parseFloat(prod.precio_oferta) : null;
+            const precioMostrado = (precioOferta && precioOferta > 0) ? precioOferta : precioBase;
+
+            // Calcular % descuento si hay oferta
+            let textoDescuento = "";
+            if (precioOferta && precioOferta > 0 && precioOferta < precioBase) {
+                const porc = Math.round((1 - (precioOferta / precioBase)) * 100);
+                textoDescuento = `-${porc}%`;
+            }
+
+            const rutaImagen = prod.imagen
+                ? "Model/" + prod.imagen
+                : "Model/imagenes/sin-imagen.png";
+
+            return `
+                <article class="card-producto"
+                         data-id="${prod.id}"
+                         data-nombre="${prod.nombre}"
+                         data-precio="${precioMostrado}">
+                    ${textoDescuento ? `<span class="descuento">${textoDescuento}</span>` : ""}
+                    <div class="img-producto">
+                        <img src="${rutaImagen}" alt="${prod.nombre}">
+                    </div>
+                    <p class="nombre-producto">${prod.nombre}</p>
+                    ${precioOferta && precioOferta > 0 && precioOferta < precioBase
+                        ? `
+                            <p class="precio-anterior">${formatearDinero(precioBase)}</p>
+                            <p class="precio-actual">${formatearDinero(precioMostrado)}</p>
+                          `
+                        : `
+                            <p class="precio-actual">${formatearDinero(precioMostrado)}</p>
+                          `
+                    }
+                    <button class="btn-add">+</button>
+                </article>
+            `;
+        }
+
+        /* ========= CARGA DESDE LA API ========= */
+
+        async function cargarMasVendidos() {
+            const cont = document.getElementById("gridMasVendidos");
+            if (!cont) return;
+            cont.innerHTML = "<p>Cargando productos...</p>";
+
+            try {
+                const resp = await fetch(`${API_URL}?accion=masVendidos&limit=4`);
+                const data = await resp.json();
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    cont.innerHTML = "<p>No hay productos para mostrar.</p>";
+                    return;
+                }
+
+                cont.innerHTML = data.map(crearCardMasVendido).join("");
+                wireBotonesCarrito("#gridMasVendidos .btn-best");
+
+            } catch (err) {
+                console.error(err);
+                cont.innerHTML = "<p>Error al cargar los productos.</p>";
+            }
+        }
+
+        async function cargarOfertas() {
+            const cont = document.getElementById("gridOfertas");
+            if (!cont) return;
+            cont.innerHTML = "<p>Cargando ofertas...</p>";
+
+            try {
+                const resp = await fetch(`${API_URL}?accion=ofertas&limit=6`);
+                const data = await resp.json();
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    cont.innerHTML = "<p>No hay ofertas disponibles.</p>";
+                    return;
+                }
+
+                cont.innerHTML = data.map(crearCardOferta).join("");
+                wireBotonesCarrito("#gridOfertas .btn-add");
+
+            } catch (err) {
+                console.error(err);
+                cont.innerHTML = "<p>Error al cargar las ofertas.</p>";
+            }
+        }
+
+        async function cargarPromociones() {
+            const cont = document.getElementById("gridPromos");
+            if (!cont) return;
+
+            try {
+                const resp = await fetch(`${API_URL}?accion=ofertas&limit=3`);
+                const data = await resp.json();
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    cont.innerHTML = "<p>No hay promociones activas.</p>";
+                    return;
+                }
+
+                cont.innerHTML = data.map(crearCardOferta).join("");
+                wireBotonesCarrito("#gridPromos .btn-add");
+
+            } catch (err) {
+                console.error(err);
+                cont.innerHTML = "<p>Error al cargar promociones.</p>";
+            }
+        }
+
+        /* ========= INICIALIZACIÓN ========= */
+        document.addEventListener("DOMContentLoaded", () => {
+            // Buscar con Enter
+            const buscador = document.getElementById("buscador");
+            if (buscador) {
+                buscador.addEventListener("keyup", e => {
+                    if (e.key === "Enter") {
+                        realizarBusqueda();
+                    }
+                });
+            }
+
+            // Cargar secciones desde la BD
+            cargarMasVendidos();
+            cargarOfertas();
+            cargarPromociones();
+        });
+    </script>
+
+    <!-- SESIÓN USUARIO (reemplaza header-usuario si hay login) -->
+    <script src="Model/js/sesion-usuario.js"></script>
+
+</body>
+</html>

@@ -33,10 +33,8 @@
             </div>
         </div>
 
-        <div class="header-right">
-            <a href="login.html" class="link-header">Acceder / Registrarse</a>
-            <a href="carrito.html" class="link-header">🛒 Carrito</a>
-        </div>
+        <!-- Se rellena con el usuario logueado -->
+        <div class="header-right" id="header-usuario"></div>
     </header>
 
     <!-- NAV -->
@@ -160,7 +158,7 @@
             <!-- PRODUCTOS -->
             <section class="category-main">
                 <div class="category-main-header">
-                    <p>Mostrando 1–4 de 4 resultados</p>
+                    <p id="textoResultadosEscolar">Mostrando 0 resultados</p>
                     <div class="category-sort">
                         <label for="ordenEscolar">Ordenar por:</label>
                         <select id="ordenEscolar" class="sidebar-select">
@@ -172,63 +170,7 @@
                 </div>
 
                 <div id="gridEscolar" class="product-grid">
-
-                    <!-- MOCHILA -->
-                    <article class="product-card"
-                             data-id="ES001"
-                             data-nombre="Mochila juvenil"
-                             data-precio="18.50"
-                             data-tipo="mochilas">
-                        <div class="product-image">
-                            <img src="../Model/imagenes/Mochila_juvenil.jpeg" alt="Mochila juvenil">
-                        </div>
-                        <h3>Mochila juvenil</h3>
-                        <p class="product-price">$18.50 + IVA</p>
-                        <button class="btn-add-grid">Agregar al carrito</button>
-                    </article>
-
-                    <!-- CUADERNO -->
-                    <article class="product-card"
-                             data-id="ES002"
-                             data-nombre="Cuaderno universitario"
-                             data-precio="2.30"
-                             data-tipo="cuadernos">
-                        <div class="product-image">
-                            <img src="../Model/imagenes/Cuaderno_universitario.jpg" alt="Cuaderno universitario">
-                        </div>
-                        <h3>Cuaderno universitario</h3>
-                        <p class="product-price">$2.30 + IVA</p>
-                        <button class="btn-add-grid">Agregar al carrito</button>
-                    </article>
-
-                    <!-- ESTUCHE -->
-                    <article class="product-card"
-                             data-id="ES003"
-                             data-nombre="Estuche con lapiceros"
-                             data-precio="4.20"
-                             data-tipo="lapiceros">
-                        <div class="product-image">
-                            <img src="../Model/imagenes/Estuche_con_lapiceros.jpg" alt="Estuche con lapiceros">
-                        </div>
-                        <h3>Estuche con lapiceros</h3>
-                        <p class="product-price">$4.20 + IVA</p>
-                        <button class="btn-add-grid">Agregar al carrito</button>
-                    </article>
-
-                    <!-- COLORES -->
-                    <article class="product-card"
-                             data-id="ES004"
-                             data-nombre="Set de colores"
-                             data-precio="3.10"
-                             data-tipo="colores">
-                        <div class="product-image">
-                            <img src="../Model/imagenes/Marcadores_Pelikan.jpg" alt="Set de colores">
-                        </div>
-                        <h3>Set de colores</h3>
-                        <p class="product-price">$3.10 + IVA</p>
-                        <button class="btn-add-grid">Agregar al carrito</button>
-                    </article>
-
+                    <!-- Se llena con productos desde la BD -->
                 </div>
             </section>
         </div>
@@ -238,14 +180,98 @@
         <p>MegaSantiago © 2025 - Todos los derechos reservados</p>
     </footer>
 
-    <!-- LÓGICA ORDENAR + FILTROS + CARRITO -->
+    <!-- ============================= -->
+    <!--   JS ÚTILES ESCOLARES (BD)   -->
+    <!-- ============================= -->
     <script>
-        (function () {
+        const API_URL = "/MegaSantiagoFront/Controller/productosController.php";
+
+        function formatearDinero(valor) {
+            return "$" + Number(valor).toFixed(2);
+        }
+
+        // Detectar tipo para filtros según el nombre
+        function detectarTipoEscolar(nombre) {
+            const n = (nombre || "").toLowerCase();
+            if (n.includes("mochila"))   return "mochilas";
+            if (n.includes("cuaderno"))  return "cuadernos";
+            if (n.includes("estuche") || n.includes("lapicero") || n.includes("lápiz")) return "lapiceros";
+            if (n.includes("color") || n.includes("marcador")) return "colores";
+            return "otros";
+        }
+
+        function crearTarjetaEscolar(prod) {
+            const precioBase    = parseFloat(prod.precio);
+            const precioOferta  = prod.precio_oferta ? parseFloat(prod.precio_oferta) : null;
+            const precioMostrar = (precioOferta && precioOferta > 0) ? precioOferta : precioBase;
+
+            const rutaImagen = prod.imagen
+                ? "../Model/" + prod.imagen
+                : "../Model/imagenes/sin-imagen.png";
+
+            const tipo = detectarTipoEscolar(prod.nombre);
+
+            return `
+                <article class="product-card"
+                         data-id="${prod.id}"
+                         data-precio="${precioMostrar}"
+                         data-tipo="${tipo}">
+                    <div class="product-image">
+                        <img src="${rutaImagen}" alt="${prod.nombre}">
+                    </div>
+                    <h3>${prod.nombre}</h3>
+                    <p class="product-price">${formatearDinero(precioMostrar)} + IVA</p>
+                    <button class="btn-add-grid" type="button">Agregar al carrito</button>
+                </article>
+            `;
+        }
+
+        async function cargarProductosEscolares() {
+            const grid  = document.getElementById("gridEscolar");
+            const texto = document.getElementById("textoResultadosEscolar");
+
+            grid.innerHTML = "<p>Cargando productos...</p>";
+
+            try {
+                // 🔥 Slug real de la categoría en la BD: 'utiles'
+                const resp = await fetch(`${API_URL}?accion=listarPorCategoria&categoria=utiles`);
+                const data = await resp.json();
+
+                console.log("Escolares API:", data);
+
+                if (data.error) {
+                    grid.innerHTML = `<p>Error: ${data.error}</p>`;
+                    texto.textContent = "Mostrando 0 resultados";
+                    return;
+                }
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    grid.innerHTML = "<p>No hay productos de útiles escolares.</p>";
+                    texto.textContent = "Mostrando 0 resultados";
+                    return;
+                }
+
+                grid.innerHTML = data.map(crearTarjetaEscolar).join("");
+                texto.textContent =
+                    `Mostrando ${data.length} resultado${data.length > 1 ? "s" : ""}`;
+
+                inicializarOrdenEscolar();
+                inicializarFiltrosEscolar();
+                inicializarCarritoEscolar();
+
+            } catch (err) {
+                console.error(err);
+                grid.innerHTML = "<p>Error al cargar productos.</p>";
+                texto.textContent = "Mostrando 0 resultados";
+            }
+        }
+
+        /* -------- ORDENAR -------- */
+        function inicializarOrdenEscolar() {
             const selectOrden = document.getElementById('ordenEscolar');
             const grid = document.getElementById('gridEscolar');
 
-            /* -------- ORDENAR -------- */
-            function ordenar() {
+            selectOrden.addEventListener('change', () => {
                 const opcion = selectOrden.value;
                 const cards = Array.from(grid.querySelectorAll('.product-card'));
                 if (opcion === 'default') return;
@@ -257,50 +283,23 @@
                 });
 
                 cards.forEach(c => grid.appendChild(c));
-            }
-
-            selectOrden.addEventListener('change', ordenar);
-
-            /* -------- CARRITO -------- */
-            function obtenerCarrito() {
-                return JSON.parse(localStorage.getItem('carritoMega') || '[]');
-            }
-            function guardarCarrito(carrito) {
-                localStorage.setItem('carritoMega', JSON.stringify(carrito));
-            }
-            function agregarAlCarrito(id, nombre, precio) {
-                let carrito = obtenerCarrito();
-                const existe = carrito.find(p => p.id === id);
-                if (existe) existe.cantidad += 1;
-                else carrito.push({ id, nombre, precio, cantidad: 1 });
-                guardarCarrito(carrito);
-            }
-
-            document.querySelectorAll('.btn-add-grid').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const card = btn.closest('.product-card');
-                    agregarAlCarrito(
-                        card.dataset.id,
-                        card.dataset.nombre,
-                        parseFloat(card.dataset.precio)
-                    );
-                    alert('Producto agregado al carrito');
-                });
             });
+        }
 
-            /* -------- FILTRO TIPO + PRECIO -------- */
-            const cards = Array.from(grid.querySelectorAll('.product-card'));
+        /* -------- FILTROS -------- */
+        function inicializarFiltrosEscolar() {
+            const grid        = document.getElementById('gridEscolar');
+            const cards       = Array.from(grid.querySelectorAll('.product-card'));
             const selectTipo  = document.querySelector('.sidebar-select-tipo');
             const rangePrecio = document.querySelector('.sidebar-range');
             const infoPrecio  = document.querySelector('.sidebar-range-info');
             const btnFiltrar  = document.querySelector('.btn-sidebar');
 
-            if (rangePrecio && infoPrecio) {
+            infoPrecio.textContent = 'Precio máx: $' + rangePrecio.value;
+
+            rangePrecio.addEventListener('input', () => {
                 infoPrecio.textContent = 'Precio máx: $' + rangePrecio.value;
-                rangePrecio.addEventListener('input', () => {
-                    infoPrecio.textContent = 'Precio máx: $' + rangePrecio.value;
-                });
-            }
+            });
 
             function aplicarFiltros() {
                 const tipoSeleccionado = selectTipo.value;
@@ -310,7 +309,7 @@
                     const precio   = parseFloat(card.dataset.precio);
                     const tipoCard = card.dataset.tipo;
 
-                    const okTipo = tipoSeleccionado === 'todos' || tipoCard === tipoSeleccionado;
+                    const okTipo   = tipoSeleccionado === 'todos' || tipoCard === tipoSeleccionado;
                     const okPrecio = precio <= maxPrecio;
 
                     card.style.display = (okTipo && okPrecio) ? '' : 'none';
@@ -318,11 +317,46 @@
             }
 
             btnFiltrar.addEventListener('click', aplicarFiltros);
-        })();
+        }
+
+        /* -------- CARRITO -------- */
+        function inicializarCarritoEscolar() {
+            const grid = document.getElementById('gridEscolar');
+
+            function obtenerCarrito() {
+                return JSON.parse(localStorage.getItem('carritoMega') || '[]');
+            }
+            function guardarCarrito(carrito) {
+                localStorage.setItem('carritoMega', JSON.stringify(carrito));
+            }
+
+            grid.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('btn-add-grid')) return;
+
+                const card   = e.target.closest('.product-card');
+                const id     = card.dataset.id;
+                const nombre = card.querySelector('h3').textContent;
+                const precio = parseFloat(card.dataset.precio);
+
+                let carrito  = obtenerCarrito();
+                const existe = carrito.find(p => p.id === id);
+
+                if (existe) existe.cantidad += 1;
+                else carrito.push({ id, nombre, precio, cantidad: 1 });
+
+                guardarCarrito(carrito);
+                alert('Producto agregado al carrito');
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarProductosEscolares();
+        });
     </script>
 
-    <!-- BUSCADOR GLOBAL ahora desde Model/js -->
+    <!-- BUSCADOR GLOBAL + SESIÓN USUARIO -->
     <script src="../Model/js/busqueda-global.js"></script>
+    <script src="../Model/js/sesion-usuario.js"></script>
 
 </body>
 </html>
