@@ -75,34 +75,40 @@ switch ($accion) {
        LOGIN DE USUARIO
     ========================================================== */
     case "login":
-        $data = json_decode(file_get_contents("php://input"), true);
+    $data = json_decode(file_get_contents("php://input"), true);
 
-        $email = trim($data["email"] ?? "");
-        $clave = trim($data["clave"] ?? "");
+    $email = trim($data["email"] ?? "");
+    $clave = trim($data["clave"] ?? "");
 
-        if ($email === "" || $clave === "") {
-            echo json_encode(["error" => "Faltan datos de acceso."]);
-            exit;
-        }
+    if ($email === "" || $clave === "") {
+        echo json_encode(["error" => "Faltan datos de acceso."]);
+        exit;
+    }
 
-        $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE email = ?");
-        $stmt->execute([$email]);
-        $usuario = $stmt->fetch();
+    $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE email = ?");
+    $stmt->execute([$email]);
+    $usuario = $stmt->fetch();
 
-        if (!$usuario || !password_verify($clave, $usuario["clave_hash"])) {
-            echo json_encode(["error" => "Credenciales incorrectas"]);
-            exit;
-        }
+    if (!$usuario || !password_verify($clave, $usuario["clave_hash"])) {
+        echo json_encode(["error" => "Credenciales incorrectas"]);
+        exit;
+    }
 
-        echo json_encode([
-            "exito"   => true,
-            "usuario" => [
-                "id"    => (int)$usuario["id_usuario"],
-                "email" => $usuario["email"],
-                "rol"   => (int)$usuario["id_rol"]
-            ]
-        ]);
-        break;
+    // 🔐 CREAR SESIÓN PHP
+    session_start();
+    $_SESSION["usuario"] = $usuario["email"];
+    $_SESSION["rol"]     = (int)$usuario["id_rol"];
+    $_SESSION["id"]      = (int)$usuario["id_usuario"];
+
+    echo json_encode([
+        "exito"   => true,
+        "usuario" => [
+            "id"    => (int)$usuario["id_usuario"],
+            "email" => $usuario["email"],
+            "rol"   => (int)$usuario["id_rol"]
+        ]
+    ]);
+    break;
 
     default:
         echo json_encode(["error" => "Acción no válida"]);

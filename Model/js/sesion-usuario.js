@@ -21,12 +21,32 @@ function initSesionUsuario() {
     return;
   }
 
-  // ✅ HAY sesión
-  contenedor.innerHTML = `
-    <span class="user-name">Hola, ${usuario.email}</span>
-    <a href="/MegaSantiagoFront/View/pages/carrito.html" class="link-header">🛒</a>
-    <a href="#" id="logout" class="link-header">Salir</a>
+// ✅ HAY sesión
+let htmlSesion = `
+  <span class="user-name">Hola, ${usuario.email}</span>
+`;
+
+// 👉 SOLO ADMINISTRADOR ve Dashboard
+if (usuario.rol === 1) {
+  htmlSesion += `
+    <a href="/MegaSantiagoFront/admin/dashboard.php" class="link-header">
+      📊 Dashboard
+    </a>
   `;
+}
+
+// 👉 Todos los usuarios logueados ven carrito (icono + texto)
+htmlSesion += `
+  <a href="/MegaSantiagoFront/View/pages/carrito.html" class="link-header">
+    🛒 Carrito
+  </a>
+  <a href="#" id="logout" class="link-header">
+    Salir
+  </a>
+`;
+
+contenedor.innerHTML = htmlSesion;
+
 
   document.getElementById("logout").addEventListener("click", () => {
     localStorage.removeItem("usuarioMega");
