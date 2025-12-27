@@ -6,36 +6,45 @@
     <title>MegaSantiago | Acceder / Registrarse</title>
 
     <!-- CSS (desde View/pages → Model) -->
-    <link rel="stylesheet" href="../../Model/csss estilos/estilos.css">
+    <link rel="stylesheet" href="../../Model/csss%20estilos/estilos.css">
+
+    <style>
+        .auth-form label{display:block;font-weight:600;margin-top:14px;margin-bottom:6px}
+        .auth-form input{width:100%;padding:12px 14px;box-sizing:border-box}
+        .auth-separator{margin:18px 0;border-top:1px solid #e5e5e5;padding-top:14px}
+        .btn-auth-secondary{width:100%;padding:12px 14px;border:1px solid #cfcfcf;border-radius:6px;background:#f7f7f7;cursor:pointer}
+        .btn-auth-secondary:hover{background:#f0f0f0}
+        .auth-note{margin-top:12px;font-size:13px;color:#666;line-height:1.35}
+    </style>
 </head>
 <body>
 
     <!-- ===== LAYOUT ===== -->
     <div id="header"></div>
-    <!-- NO NAV en login -->
     <!-- ================== -->
 
-    <!-- CONTENIDO -->
     <main class="auth-page">
         <section class="auth-container">
 
             <!-- LOGIN -->
-            <div class="auth-card">
+            <div class="auth-card auth-card--login">
                 <h2>Acceder</h2>
 
                 <form id="formLogin" class="auth-form">
                     <label for="login-email">
                         Email <span class="req">*</span>
                     </label>
-                    <input type="email" id="login-email" required>
+                    <input type="email" id="login-email" required autocomplete="email">
 
                     <label for="login-clave">
                         Contraseña <span class="req">*</span>
                     </label>
                     <div class="auth-password-wrapper">
-                        <input type="password" id="login-clave" required>
+                        <input type="password" id="login-clave" required autocomplete="current-password">
                         <button type="button" class="btn-eye" data-target="login-clave">👁</button>
                     </div>
+
+                    <a href="recuperar_clave.html" class="auth-link">¿Olvidaste tu contraseña?</a>
 
                     <button type="submit" class="btn-auth-primary">
                         INICIAR SESIÓN
@@ -48,22 +57,40 @@
                 <h2>Registrarse</h2>
 
                 <form id="formRegistro" class="auth-form">
+                    <label for="reg-nombre">
+                        Nombre <span class="req">*</span>
+                    </label>
+                    <input type="text" id="reg-nombre" required autocomplete="given-name">
+
+                    <label for="reg-apellido">
+                        Apellido <span class="req">*</span>
+                    </label>
+                    <input type="text" id="reg-apellido" required autocomplete="family-name">
+
                     <label for="reg-correo">
                         Email <span class="req">*</span>
                     </label>
-                    <input type="email" id="reg-correo" required>
+                    <input type="email" id="reg-correo" required autocomplete="email">
 
                     <label for="reg-clave">
                         Contraseña <span class="req">*</span>
                     </label>
                     <div class="auth-password-wrapper">
-                        <input type="password" id="reg-clave" required>
+                        <input type="password" id="reg-clave" required autocomplete="new-password">
                         <button type="button" class="btn-eye" data-target="reg-clave">👁</button>
                     </div>
 
                     <button type="submit" class="btn-auth-primary">
                         CREAR CUENTA
                     </button>
+
+                    <p class="auth-note">
+                        Al crear una cuenta aceptas los términos y condiciones de MegaSantiago.
+                    </p>
+
+                    <div class="auth-separator">
+                        <a href="registro_empresa.html" class="auth-link">¿Tienes una empresa? Crea tu cuenta aquí</a>
+                    </div>
                 </form>
             </div>
 
@@ -73,7 +100,6 @@
     <!-- ===== FOOTER ===== -->
     <div id="footer"></div>
     <div id="scripts"></div>
-    <!-- ================== -->
 
     <script>
         /* ================== VISIBILIDAD DE CONTRASEÑA ================== */
@@ -85,8 +111,24 @@
             });
         });
 
-        // 🔗 Ruta al controlador PHP (NO TOCAR)
-        const API = "/MegaSantiagoFront/Controller/usuariosController.php";
+        // ✅ Ruta al controlador correcto (MVC: Vista -> Controller)
+        const API = "/MegaSantiagoFront/Controller/AuthController.php";
+
+        async function fetchJSON(url, payload) {
+            const resp = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            // Intentar leer JSON incluso si es 400/401/500
+            const data = await resp.json().catch(() => null);
+
+            if (!data) {
+                return { error: "Respuesta inválida del servidor." };
+            }
+            return data;
+        }
 
         /* ================== LOGIN ================== */
         document.getElementById("formLogin").addEventListener("submit", async (e) => {
@@ -96,22 +138,11 @@
             const clave = document.getElementById("login-clave").value.trim();
 
             try {
-                const resp = await fetch(`${API}?accion=login`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email, clave })
-                });
-
-                if (!resp.ok) {
-                    alert("Error de conexión con el servidor.");
-                    return;
-                }
-
-                const data = await resp.json();
+                const data = await fetchJSON(`${API}?accion=login`, { email, clave });
                 console.log("LOGIN:", data);
 
                 if (data.error) {
-                    alert(data.error);
+                    alert(data.error); // ✅ mensaje real del backend
                     return;
                 }
 
@@ -120,14 +151,12 @@
                     return;
                 }
 
-                // Guardar usuario
                 localStorage.setItem("usuarioMega", JSON.stringify(data.usuario));
+                window.location.href = "/MegaSantiagoFront/index.html";
 
-                alert("Inicio de sesión exitoso.");
-                window.location.href = "../../index.html";
             } catch (err) {
                 console.error(err);
-                alert("Error de conexión con el servidor.");
+                alert("No se pudo conectar con el servidor.");
             }
         });
 
@@ -135,22 +164,19 @@
         document.getElementById("formRegistro").addEventListener("submit", async (e) => {
             e.preventDefault();
 
-            const email = document.getElementById("reg-correo").value.trim();
-            const clave = document.getElementById("reg-clave").value.trim();
+            const nombre   = document.getElementById("reg-nombre").value.trim();
+            const apellido = document.getElementById("reg-apellido").value.trim();
+            const email    = document.getElementById("reg-correo").value.trim();
+            const clave    = document.getElementById("reg-clave").value.trim();
+
+            if (!nombre || !apellido || !email || !clave) {
+                alert("Completa todos los campos obligatorios.");
+                return;
+            }
 
             try {
-                const resp = await fetch(`${API}?accion=registrar`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email, clave })
-                });
-
-                if (!resp.ok) {
-                    alert("Error de conexión con el servidor.");
-                    return;
-                }
-
-                const data = await resp.json();
+                // ✅ Backend actual solo registra email + clave
+                const data = await fetchJSON(`${API}?accion=registrar`, { email, clave });
                 console.log("REGISTRO:", data);
 
                 if (data.error) {
@@ -166,16 +192,14 @@
                 alert("Cuenta creada exitosamente, ahora puedes iniciar sesión.");
                 document.getElementById("login-email").value = email;
                 document.getElementById("login-clave").value = "";
+                window.scrollTo({ top: 0, behavior: "smooth" });
+
             } catch (err) {
                 console.error(err);
-                alert("Error de conexión con el servidor.");
+                alert("No se pudo conectar con el servidor.");
             }
         });
 
-        /* ================== ALIAS BUSCADOR (OPCIÓN 1) ==================
-           Si alguien usa el buscador desde el header estando aquí,
-           redirige a la página de búsqueda
-        =============================================================== */
         function realizarBusquedaGlobal() {
             const input = document.getElementById("buscador");
             if (!input) return;
@@ -188,7 +212,6 @@
     <!-- ===== LAYOUT LOADER ===== -->
     <script src="../js/layout-loader.js"></script>
     <script>
-        // Cargamos SOLO header + footer (no nav)
         loadLayout();
     </script>
 
