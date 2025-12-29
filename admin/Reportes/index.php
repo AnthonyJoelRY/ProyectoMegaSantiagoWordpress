@@ -1,102 +1,292 @@
+<?php
+session_start();
+$seccionActiva = 'reportes';
+
+if (!isset($_SESSION["rol"]) || $_SESSION["rol"] !== 1) {
+    header("Location: /MegaSantiagoFront/index.html");
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard | MegaSantiago</title>
+    <title>Reportes | MegaSantiago</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        /* Estilos personalizados muy sencillos para la barra lateral y asegurar que el contenido se vea */
-        .sidebar {
-            /* Asegura que el color de fondo de la barra lateral sea consistente */
-            background-color: #212529 !important; /* Usando bg-dark */
-        }
-        .nav-link.active {
-            /* Estilo para el enlace activo */
-            background-color: rgba(255, 255, 255, 0.1);
-            border-left: 4px solid var(--bs-info); /* Línea de color para indicar activo */
-        }
-        .nav-link {
-             padding-left: 1.5rem; /* Pequeño ajuste para el padding de los enlaces */
-        }
-        .card-body h2 {
-            font-size: 2.5rem; /* Ajuste para las métricas clave */
-        }
-    </style>
 </head>
+
 <body class="bg-light">
 
-<div class="container-fluid">
-    <div class="row">
+    <div class="container-fluid">
+        <div class="row">
 
-        <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse min-vh-100 p-0 shadow-lg">
-            <div class="position-sticky pt-4">
-                <div class="d-flex align-items-center justify-content-center mb-4 pb-2 border-bottom border-light opacity-50 mx-3">
-                     <h4 class="text-white fw-bolder my-0">
-                         MegaSantiago
-                     </h4>
-                 </div>
-                <ul class="nav flex-column px-2">
-    <li class="nav-item">
-        <a class="nav-link text-white rounded-2"
-           href="/MegaSantiagoFront/admin/dashboard.php">
-           🏠 Dashboard
-        </a>
-    </li>
+            <!-- SIDEBAR -->
+            <?php include __DIR__ . "/../PLANTILLAS/sidebar.php"; ?>
 
-    <li class="nav-item">
-        <a class="nav-link text-white rounded-2"
-           href="/MegaSantiagoFront/admin/productos/">
-           📦 Productos
-        </a>
-    </li>
+            <!-- CONTENIDO -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-5 py-4">
 
-    <li class="nav-item">
-        <a class="nav-link text-white rounded-2"
-           href="/MegaSantiagoFront/admin/usuarios/">
-           👥 Usuarios
-        </a>
-    </li>
+                <h2 class="fw-bold text-primary mb-4">📊 Reportes - Resumen General</h2>
 
-    <li class="nav-item">
-        <a class="nav-link text-white rounded-2"
-           href="/MegaSantiagoFront/admin/pedidos/">
-           🛒 Pedidos
-        </a>
-    </li>
+                <!-- =======================
+                      KPIs
+                ======================= -->
+                <div class="row g-4 mb-5">
 
-    <li class="nav-item">
-        <a class="nav-link text-white active rounded-2"
-           href="/MegaSantiagoFront/admin/reportes/">
-           📈 Reportes
-        </a>
-    </li>
-</ul>
-                
-                <div class="px-3 mt-5">
-                    <a class="nav-link text-white bg-danger bg-opacity-75 hover-bg-danger rounded-3 p-2 text-center fw-semibold" href="/MegaSantiagoFront/index.html">
-                        <span class="me-2">↩️</span> Volver al sitio
-                    </a>
+                    <div class="col-md-3">
+                        <div class="card shadow-sm p-3 text-center">
+                            <small class="text-muted">💰 Total ventas</small>
+                            <h3 id="kpiVentas">$0.00</h3>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="card shadow-sm p-3 text-center">
+                            <small class="text-muted">📦 Pedidos pagados</small>
+                            <h3 id="kpiPedidos">0</h3>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="card shadow-sm p-3 text-center">
+                            <small class="text-muted">👤 Clientes</small>
+                            <h3 id="kpiClientes">0</h3>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="card shadow-sm p-3 text-center">
+                            <small class="text-muted">📊 Promedio por pedido</small>
+                            <h3 id="kpiPromedio">$0.00</h3>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </nav>
 
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-5 py-4">
+                <!-- IVA -->
+                <div class="col-md-3 mb-5">
+                    <div class="card shadow-sm p-3 text-center">
+                        <small class="text-muted">💸 IVA recaudado</small>
+                        <h3 id="ventasIVA">$0.00</h3>
+                    </div>
+                </div>
 
-        
+
+                <!-- =======================
+                      VENTAS POR DÍA
+                ======================= -->
+                <div class="card shadow-sm mt-4">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3">📅 Ventas por día</h5>
+
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaVentasDia">
+                                <tr>
+                                    <td colspan="2" class="text-muted text-center">Cargando...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
 
+                <!-- =======================
+                      VENTAS POR MES
+                ======================= -->
+                <div class="card shadow-sm mt-4">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3">📆 Ventas por mes</h5>
+
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Mes</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaVentasMes">
+                                <tr>
+                                    <td colspan="2" class="text-muted text-center">Cargando...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
 
-        
+                <!-- =======================
+                      PRODUCTOS MÁS VENDIDOS
+                ======================= -->
+                <div class="card shadow-sm mt-4">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3">📦 Productos más vendidos (TOP 5)</h5>
 
-        </main>
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Cantidad vendida</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaProductosVendidos">
+                                <tr>
+                                    <td colspan="2" class="text-muted text-center">Cargando...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
+
+                <!-- =======================
+                      PRODUCTOS MENOS VENDIDOS
+                ======================= -->
+                <div class="card shadow-sm mt-4">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3">📉 Productos menos vendidos (TOP 5)</h5>
+
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Unidades vendidas</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaProductosMenosVendidos">
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted">Cargando...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <!-- =======================
+                      CLIENTES CON MÁS COMPRAS
+                ======================= -->
+                <div class="card shadow-sm mt-4">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3">👥 Clientes con más compras</h5>
+
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Pedidos</th>
+                                    <th>Total gastado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaClientesTop">
+                                <tr>
+                                    <td colspan="3" class="text-muted text-center">Cargando...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </main>
+        </div>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API = "/MegaSantiagoFront/Controller/reportesController.php";
+
+        // KPIs
+        fetch(API + "?accion=kpis")
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById("kpiVentas").textContent = "$" + Number(d.ventasTotales).toFixed(2);
+                document.getElementById("kpiPedidos").textContent = d.totalPedidos;
+                document.getElementById("kpiClientes").textContent = d.totalClientes;
+                document.getElementById("kpiPromedio").textContent = "$" + Number(d.promedioPorPedido).toFixed(2);
+                document.getElementById("ventasIVA").textContent = "$" + Number(d.totalIVA).toFixed(2);
+            });
+
+        // Ventas por día
+        fetch(API + "?accion=ventasDia")
+            .then(r => r.json())
+            .then(rows => {
+                const tbody = document.getElementById("tablaVentasDia");
+                tbody.innerHTML = "";
+                if (!rows.length) {
+                    tbody.innerHTML = `<tr><td colspan="2" class="text-muted text-center">Sin datos</td></tr>`;
+                    return;
+                }
+                rows.forEach(r => {
+                    tbody.innerHTML += `<tr><td>${r.fecha}</td><td>$${Number(r.total).toFixed(2)}</td></tr>`;
+                });
+            });
+
+        // Ventas por mes
+        fetch(API + "?accion=ventasMes")
+            .then(r => r.json())
+            .then(rows => {
+                const tbody = document.getElementById("tablaVentasMes");
+                tbody.innerHTML = "";
+                if (!rows.length) {
+                    tbody.innerHTML = `<tr><td colspan="2" class="text-muted text-center">Sin datos</td></tr>`;
+                    return;
+                }
+                rows.forEach(r => {
+                    tbody.innerHTML += `<tr><td>${r.mes}</td><td>$${Number(r.total).toFixed(2)}</td></tr>`;
+                });
+            });
+
+        // Productos más vendidos
+        fetch(API + "?accion=productosMasVendidos")
+            .then(r => r.json())
+            .then(rows => {
+                const tbody = document.getElementById("tablaProductosVendidos");
+                tbody.innerHTML = "";
+                if (!rows.length) {
+                    tbody.innerHTML = `<tr><td colspan="2" class="text-muted text-center">Sin datos</td></tr>`;
+                    return;
+                }
+                rows.forEach(p => {
+                    tbody.innerHTML += `<tr><td>${p.nombre}</td><td>${p.total_vendido}</td></tr>`;
+                });
+            });
+
+        // Productos menos vendidos
+        fetch(API + "?accion=productosMenosVendidos")
+            .then(r => r.json())
+            .then(rows => {
+                const tbody = document.getElementById("tablaProductosMenosVendidos");
+                tbody.innerHTML = "";
+                if (!rows.length) {
+                    tbody.innerHTML = `<tr><td colspan="2" class="text-center text-muted">Sin datos</td></tr>`;
+                    return;
+                }
+                rows.forEach(p => {
+                    tbody.innerHTML += `<tr><td>${p.nombre}</td><td>${p.total_vendido}</td></tr>`;
+                });
+            });
+
+        // Clientes top
+        fetch(API + "?accion=clientesTop")
+            .then(r => r.json())
+            .then(rows => {
+                const tbody = document.getElementById("tablaClientesTop");
+                tbody.innerHTML = "";
+                if (!rows.length) {
+                    tbody.innerHTML = `<tr><td colspan="3" class="text-muted text-center">Sin datos</td></tr>`;
+                    return;
+                }
+                rows.forEach(r => {
+                    tbody.innerHTML += `<tr><td>${r.cliente}</td><td>${r.total_pedidos}</td><td>$${Number(r.total_gastado).toFixed(2)}</td></tr>`;
+                });
+            });
+    </script>
 
 </body>
 </html>

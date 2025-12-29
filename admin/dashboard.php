@@ -2,7 +2,6 @@
 session_start();
 
 //Esto es el nivel de seguridad para que solo administrador pueda ver el dashboard
-// Si no hay sesión o no es administrador → fuera
 if (
     !isset($_SESSION["usuario"]) ||
     !isset($_SESSION["rol"]) ||
@@ -11,13 +10,8 @@ if (
     header("Location: /MegaSantiagoFront/index.html");
     exit;
 }
-?>
 
-
-
-<?php
 require_once __DIR__ . "/../Model/db.php";
-
 $pdo = obtenerConexion();
 
 /* ===============================
@@ -30,38 +24,14 @@ $totalProductos = $pdo->query("SELECT COUNT(*) FROM productos")->fetchColumn();
 // Total usuarios
 $totalUsuarios = $pdo->query("SELECT COUNT(*) FROM usuarios")->fetchColumn();
 
-// Total pedidos
-$totalPedidos = 0;
-try {
-    $totalPedidos = $pdo->query("SELECT COUNT(*) FROM pedidos")->fetchColumn();
-} catch (Exception $e) {
-    $totalPedidos = 0;
-}
-
-// Ventas totales
-$ventasTotales = 0;
-try {
-    $ventasTotales = $pdo->query("
-        SELECT IFNULL(SUM(total), 0) 
-        FROM pedidos 
-        WHERE estado = 'Completado'
-    ")->fetchColumn();
-} catch (Exception $e) {
-    $ventasTotales = 0;
-}
 
 // Productos con descuento / ofertas
-$productosOferta = 0;
-try {
-    $productosOferta = $pdo->query("
-        SELECT COUNT(*) 
-        FROM productos 
-        WHERE descuento > 0
-    ")->fetchColumn();
-} catch (Exception $e) {
-    $productosOferta = 0;
-}
-
+$productosOferta = $pdo->query("
+    SELECT COUNT(*) 
+    FROM productos 
+    WHERE precio_oferta IS NOT NULL 
+      AND precio_oferta > 0
+")->fetchColumn();
 
 /* ===============================
    FILA 2 – CATÁLOGO
@@ -74,14 +44,17 @@ $productosActivos = $pdo->query("
 
 // Productos sin stock
 $sinStock = $pdo->query("
-    SELECT COUNT(*) FROM inventario WHERE stock_actual <= 0
+    SELECT COUNT(*) 
+    FROM inventario 
+    WHERE stock_actual <= 0
 ")->fetchColumn();
 
 // Productos con stock bajo (≤ 5)
 $stockBajo = $pdo->query("
-    SELECT COUNT(*) FROM inventario WHERE stock_actual <= 5
+    SELECT COUNT(*) 
+    FROM inventario 
+    WHERE stock_actual <= 5
 ")->fetchColumn();
-
 
 /* ===============================
    FILA 3 – USUARIOS
@@ -89,14 +62,17 @@ $stockBajo = $pdo->query("
 
 // Administradores
 $admins = $pdo->query("
-    SELECT COUNT(*) FROM usuarios WHERE id_rol = 1
+    SELECT COUNT(*) 
+    FROM usuarios 
+    WHERE id_rol = 1
 ")->fetchColumn();
 
 // Clientes
 $clientes = $pdo->query("
-    SELECT COUNT(*) FROM usuarios WHERE id_rol = 3
+    SELECT COUNT(*) 
+    FROM usuarios 
+    WHERE id_rol = 3
 ")->fetchColumn();
-
 
 /* ===============================
    FILA 4 – ALERTAS
@@ -120,8 +96,6 @@ $ultimoProducto = $pdo->query("
 
 ?>
 
-
-
 <!DOCTYPE html>
 <html lang="es">
 
@@ -132,28 +106,21 @@ $ultimoProducto = $pdo->query("
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* Estilos personalizados muy sencillos para la barra lateral y asegurar que el contenido se vea */
         .sidebar {
-            /* Asegura que el color de fondo de la barra lateral sea consistente */
             background-color: #212529 !important;
-            /* Usando bg-dark */
         }
 
         .nav-link.active {
-            /* Estilo para el enlace activo */
             background-color: rgba(255, 255, 255, 0.1);
             border-left: 4px solid var(--bs-info);
-            /* Línea de color para indicar activo */
         }
 
         .nav-link {
             padding-left: 1.5rem;
-            /* Pequeño ajuste para el padding de los enlaces */
         }
 
         .card-body h2 {
             font-size: 2.5rem;
-            /* Ajuste para las métricas clave */
         }
     </style>
 </head>
@@ -166,50 +133,30 @@ $ultimoProducto = $pdo->query("
             <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse min-vh-100 p-0 shadow-lg">
                 <div class="position-sticky pt-4">
                     <div class="d-flex align-items-center justify-content-center mb-4 pb-2 border-bottom border-light opacity-50 mx-3">
-                        <h4 class="text-white fw-bolder my-0">
-                            MegaSantiago
-                        </h4>
+                        <h4 class="text-white fw-bolder my-0">MegaSantiago</h4>
                     </div>
+
                     <ul class="nav flex-column px-2">
                         <li class="nav-item">
-                            <a class="nav-link text-white active rounded-2"
-                                href="/MegaSantiagoFront/admin/dashboard.php">
-                                🏠 Dashboard
-                            </a>
+                            <a class="nav-link text-white active rounded-2" href="/MegaSantiagoFront/admin/dashboard.php">🏠 Dashboard</a>
                         </li>
-
                         <li class="nav-item">
-                            <a class="nav-link text-white rounded-2"
-                                href="/MegaSantiagoFront/admin/productos/">
-                                📦 Productos
-                            </a>
+                            <a class="nav-link text-white rounded-2" href="/MegaSantiagoFront/admin/productos/">📦 Productos</a>
                         </li>
-
                         <li class="nav-item">
-                            <a class="nav-link text-white rounded-2"
-                                href="/MegaSantiagoFront/admin/usuarios/">
-                                👥 Usuarios
-                            </a>
+                            <a class="nav-link text-white rounded-2" href="/MegaSantiagoFront/admin/usuarios/">👥 Usuarios</a>
                         </li>
-
                         <li class="nav-item">
-                            <a class="nav-link text-white rounded-2"
-                                href="/MegaSantiagoFront/admin/pedidos/">
-                                🛒 Pedidos
-                            </a>
+                            <a class="nav-link text-white rounded-2" href="/MegaSantiagoFront/admin/pedidos/">🛒 Pedidos</a>
                         </li>
-
                         <li class="nav-item">
-                            <a class="nav-link text-white rounded-2"
-                                href="/MegaSantiagoFront/admin/reportes/">
-                                📈 Reportes
-                            </a>
+                            <a class="nav-link text-white rounded-2" href="/MegaSantiagoFront/admin/reportes/">📈 Reportes</a>
                         </li>
                     </ul>
 
-
                     <div class="px-3 mt-5">
-                        <a class="nav-link text-white bg-danger bg-opacity-75 hover-bg-danger rounded-3 p-2 text-center fw-semibold" href="/MegaSantiagoFront/index.html">
+                        <a class="nav-link text-white bg-danger bg-opacity-75 rounded-3 p-2 text-center fw-semibold"
+                            href="/MegaSantiagoFront/index.html">
                             <span class="me-2">↩️</span> Volver al sitio
                         </a>
                     </div>
@@ -223,7 +170,6 @@ $ultimoProducto = $pdo->query("
                     <small class="text-muted">Bienvenido, Admin</small>
                 </div>
 
-
                 <h4 class="mb-4 text-dark fw-bold border-bottom pb-2">Resumen General</h4>
                 <div class="row g-4 mb-5">
 
@@ -231,9 +177,7 @@ $ultimoProducto = $pdo->query("
                         <div class="card shadow rounded-4 border-0 h-100 bg-white">
                             <div class="card-body text-center">
                                 <small class="text-muted d-block mb-1 fw-semibold">Productos</small>
-                                <h2 class="fw-bolder text-primary mt-2">
-                                    <?= $totalProductos ?>
-                                </h2>
+                                <h2 class="fw-bolder text-primary mt-2"><?= $totalProductos ?></h2>
                             </div>
                         </div>
                     </div>
@@ -242,48 +186,22 @@ $ultimoProducto = $pdo->query("
                         <div class="card shadow rounded-4 border-0 h-100 bg-white">
                             <div class="card-body text-center">
                                 <small class="text-muted d-block mb-1 fw-semibold">Usuarios</small>
-                                <h2 class="fw-bolder text-success mt-2">
-                                    <?= $totalUsuarios ?>
-                                </h2>
+                                <h2 class="fw-bolder text-success mt-2"><?= $totalUsuarios ?></h2>
                             </div>
                         </div>
                     </div>
 
-                    <div class="col-md-2">
-                        <div class="card shadow rounded-4 border-0 h-100 bg-white">
-                            <div class="card-body text-center">
-                                <small class="text-muted d-block mb-1 fw-semibold">Pedidos</small>
-                                <h2 class="fw-bolder text-warning mt-2">
-                                    <?= $totalPedidos ?>
-                                </h2>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-3">
-                        <div class="card shadow rounded-4 border-0 h-100 bg-white">
-                            <div class="card-body text-center">
-                                <small class="text-muted d-block mb-1 fw-semibold">Ventas Totales</small>
-                                <h2 class="fw-bolder text-danger mt-2">
-                                    $<?= number_format($ventasTotales, 2) ?>
-                                </h2>
-                            </div>
-                        </div>
-                    </div>
-
+                   
                     <div class="col-md-3">
                         <div class="card shadow rounded-4 border-0 h-100 bg-white">
                             <div class="card-body text-center">
                                 <small class="text-muted d-block mb-1 fw-semibold">Productos en Oferta</small>
-                                <h2 class="fw-bolder text-info mt-2">
-                                    <?= $productosOferta ?>
-                                </h2>
+                                <h2 class="fw-bolder text-info mt-2"><?= $productosOferta ?></h2>
                             </div>
                         </div>
                     </div>
 
                 </div>
-
 
                 <h4 class="mb-4 text-dark fw-bold border-bottom pb-2">Catálogo</h4>
                 <div class="row g-4 mb-5">
@@ -292,9 +210,7 @@ $ultimoProducto = $pdo->query("
                         <div class="card shadow rounded-4 border-0 h-100 bg-white">
                             <div class="card-body text-center">
                                 <small class="text-muted d-block mb-1 fw-semibold">Productos Activos</small>
-                                <h2 class="fw-bolder text-success mt-2">
-                                    <?= $productosActivos ?>
-                                </h2>
+                                <h2 class="fw-bolder text-success mt-2"><?= $productosActivos ?></h2>
                             </div>
                         </div>
                     </div>
@@ -303,9 +219,7 @@ $ultimoProducto = $pdo->query("
                         <div class="card shadow rounded-4 border-0 h-100 bg-white">
                             <div class="card-body text-center">
                                 <small class="text-muted d-block mb-1 fw-semibold">Sin Stock</small>
-                                <h2 class="fw-bolder text-danger mt-2">
-                                    <?= $sinStock ?>
-                                </h2>
+                                <h2 class="fw-bolder text-danger mt-2"><?= $sinStock ?></h2>
                             </div>
                         </div>
                     </div>
@@ -314,15 +228,12 @@ $ultimoProducto = $pdo->query("
                         <div class="card shadow rounded-4 border-0 h-100 bg-white">
                             <div class="card-body text-center">
                                 <small class="text-muted d-block mb-1 fw-semibold">Stock Bajo</small>
-                                <h2 class="fw-bolder text-warning mt-2">
-                                    <?= $stockBajo ?>
-                                </h2>
+                                <h2 class="fw-bolder text-warning mt-2"><?= $stockBajo ?></h2>
                             </div>
                         </div>
                     </div>
 
                 </div>
-
 
                 <h4 class="mb-4 text-dark fw-bold border-bottom pb-2">Usuarios</h4>
                 <div class="row g-4 mb-5">
@@ -331,9 +242,7 @@ $ultimoProducto = $pdo->query("
                         <div class="card shadow rounded-4 border-0 h-100 bg-white">
                             <div class="card-body text-center">
                                 <small class="text-muted d-block mb-1 fw-semibold">Administradores</small>
-                                <h2 class="fw-bolder text-primary mt-2">
-                                    <?= $admins ?>
-                                </h2>
+                                <h2 class="fw-bolder text-primary mt-2"><?= $admins ?></h2>
                             </div>
                         </div>
                     </div>
@@ -342,16 +251,12 @@ $ultimoProducto = $pdo->query("
                         <div class="card shadow rounded-4 border-0 h-100 bg-white">
                             <div class="card-body text-center">
                                 <small class="text-muted d-block mb-1 fw-semibold">Clientes</small>
-                                <h2 class="fw-bolder text-secondary mt-2">
-                                    <?= $clientes ?>
-                                </h2>
+                                <h2 class="fw-bolder text-secondary mt-2"><?= $clientes ?></h2>
                             </div>
                         </div>
                     </div>
 
                 </div>
-
-
 
                 <h4 class="mb-4 text-dark fw-bold border-bottom pb-2">Alertas</h4>
                 <div class="row g-4 mb-4">
@@ -360,9 +265,7 @@ $ultimoProducto = $pdo->query("
                         <div class="card shadow rounded-4 border border-info border-3 h-100 bg-white">
                             <div class="card-body text-center">
                                 <small class="text-muted d-block mb-1 fw-semibold">Último Usuario Registrado</small>
-                                <h5 class="fw-bolder mt-2 text-info">
-                                    <?= $ultimoUsuario ?: 'N/A' ?>
-                                </h5>
+                                <h5 class="fw-bolder mt-2 text-info"><?= $ultimoUsuario ?: 'N/A' ?></h5>
                             </div>
                         </div>
                     </div>
@@ -371,15 +274,12 @@ $ultimoProducto = $pdo->query("
                         <div class="card shadow rounded-4 border border-info border-3 h-100 bg-white">
                             <div class="card-body text-center">
                                 <small class="text-muted d-block mb-1 fw-semibold">Último Producto Añadido</small>
-                                <h5 class="fw-bolder mt-2 text-info">
-                                    <?= $ultimoProducto ?: 'N/A' ?>
-                                </h5>
+                                <h5 class="fw-bolder mt-2 text-info"><?= $ultimoProducto ?: 'N/A' ?></h5>
                             </div>
                         </div>
                     </div>
 
                 </div>
-
 
             </main>
 
